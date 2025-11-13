@@ -21,6 +21,25 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        routes=app.routes,
+        description=app.description,
+    )
+
+    openapi_schema["servers"] = [{"url": config.PUBLIC_URL.rstrip("/")}]
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
+
 # Inicializar orquestador
 orchestrator = AgentOrchestrator()
 

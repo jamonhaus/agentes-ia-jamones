@@ -9,6 +9,7 @@ class Config:
     # OpenAI
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4")
+    PUBLIC_URL = os.getenv("PUBLIC_URL", "https://agentes-ia-jamones.onrender.com")
     
     # Registro de agentes - EQUIPO COMPLETO DE NEGOCIO
     AGENTS = {
@@ -111,5 +112,9 @@ class Config:
             print("⚠️  ADVERTENCIA: OPENAI_API_KEY no configurada o es placeholder")
             print("   Las funciones que requieran OpenAI no funcionarán")
             print("   Para configurarla: edita .env con tu clave real")
+
+        if not cls.PUBLIC_URL or not cls.PUBLIC_URL.startswith("http"):
+            print("⚠️  ADVERTENCIA: PUBLIC_URL no configurada o es inválida")
+            print("   Usa una URL completa (https://...) para las Actions de ChatGPT")
 
 config = Config()
