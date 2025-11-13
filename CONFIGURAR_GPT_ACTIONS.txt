@@ -1,0 +1,416 @@
+🔗 GUÍA: CONFIGURAR GPT ACTIONS PARA TU EQUIPO
+════════════════════════════════════════════════════════════════════════════════
+
+Tus GPTs ahora pueden comunicarse a través de ACTIONS de ChatGPT Plus.
+Aquí está el paso a paso para configurarlos.
+
+
+════════════════════════════════════════════════════════════════════════════════
+PASO 0: PREPARACIÓN - EXPONER TU API AL PÚBLICO
+════════════════════════════════════════════════════════════════════════════════
+
+Antes de configurar Actions, necesitas que tu API sea accesible desde Internet.
+Tienes 3 opciones:
+
+
+OPCIÓN A: NGROK (Más rápido para desarrollo)
+──────────────────────────────────────────
+1. Descargar ngrok: https://ngrok.com/download
+2. Ejecutar: ngrok http 8000
+3. Obtendrás URL como: https://1234abc.ngrok.io
+4. Esa es tu BASE_URL
+
+
+OPCIÓN B: Railway/Replit (Hosting gratuito)
+───────────────────────────────────────────
+1. Subir tu proyecto a Railway o Replit
+2. Obtener URL pública del servidor
+3. Esa es tu BASE_URL
+
+
+OPCIÓN C: Servidor propio con dominio
+─────────────────────────────────────
+1. Tener servidor con IP pública
+2. Usar tu dominio: https://tudominio.com
+3. Esa es tu BASE_URL
+
+
+════════════════════════════════════════════════════════════════════════════════
+PASO 1: INICIAR TU API
+════════════════════════════════════════════════════════════════════════════════
+
+En terminal:
+    python main.py
+
+Deberías ver:
+    🚀 Iniciando Orquestador de Agentes IA
+    📍 Dirección: 0.0.0.0:8000
+    🤖 Agentes disponibles: andres_director, adrian_datos, leo_partners, ...
+    📚 Documentación: http://localhost:8000/docs
+
+
+════════════════════════════════════════════════════════════════════════════════
+PASO 2: CONFIGURAR ACTIONS EN TUS GPTs
+════════════════════════════════════════════════════════════════════════════════
+
+PARA CADA GPT (ejemplo con Adrián Datos):
+
+1. Abre https://chatgpt.com/g/your-gpt-id
+
+2. Haz clic en "⚙️ Configure"
+
+3. Baja hasta "Actions"
+
+4. Haz clic en "Create new action"
+
+5. En la sección "Schema", pega este esquema OpenAPI:
+
+
+════════════════════════════════════════════════════════════════════════════════
+ESQUEMA OPENAPI PARA TUS GPTs
+════════════════════════════════════════════════════════════════════════════════
+
+PARA AGENTES ESPECIALISTAS (Adrian, Leo, Bruno, etc):
+──────────────────────────────────────────────────
+
+```yaml
+openapi: 3.0.0
+info:
+  title: Team Agent Action
+  version: 1.0.0
+  description: Conecta tu GPT especialista con el equipo de negocio
+
+servers:
+  - url: https://tu-base-url.com  # Reemplazar con tu ngrok o servidor
+    description: Team API Server
+
+paths:
+  /gpt/task/execute:
+    post:
+      operationId: executeTask
+      summary: Ejecuta tarea como especialista
+      description: Envía tu análisis o trabajo al equipo. El Director (Andrés) lo coordinará.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agent_id:
+                  type: string
+                  description: Tu ID en el sistema (ej. adrian_datos, leo_partners)
+                  example: adrian_datos
+                task:
+                  type: string
+                  description: La tarea/análisis que realizaste
+                  example: "Análisis de ventas Q4 con tendencias por país"
+                context:
+                  type: object
+                  description: Contexto adicional (opcional)
+              required:
+                - agent_id
+                - task
+      responses:
+        "200":
+          description: Tarea ejecutada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent:
+                    type: string
+                  task_received:
+                    type: string
+                  status:
+                    type: string
+                  response:
+                    type: string
+                  timestamp:
+                    type: string
+
+  /gpt/agents/list:
+    get:
+      operationId: listAgents
+      summary: Listar miembros del equipo
+      description: Obtén lista de todos los especialistas disponibles
+      responses:
+        "200":
+          description: Lista de agentes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_agents:
+                    type: number
+                  team:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        role:
+                          type: string
+                        description:
+                          type: string
+
+  /gpt/health/team:
+    get:
+      operationId: teamHealth
+      summary: Verificar salud del equipo
+      description: Chequea que todos los agentes estén disponibles
+      responses:
+        "200":
+          description: Estado del equipo
+```
+
+════════════════════════════════════════════════════════════════════════════════
+PARA ANDRÉS (DIRECTOR):
+──────────────────────
+
+```yaml
+openapi: 3.0.0
+info:
+  title: Director Coordination
+  version: 1.0.0
+  description: Andrés coordina el equipo completo
+
+servers:
+  - url: https://tu-base-url.com  # Reemplazar con tu ngrok o servidor
+
+paths:
+  /gpt/director/coordinate:
+    post:
+      operationId: directorCoordinate
+      summary: Director coordina múltiples agentes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                request:
+                  type: string
+                  description: Tu petición como Director
+                  example: "Necesito estrategia de ventas Q1 2024"
+                required_agents:
+                  type: array
+                  items:
+                    type: string
+                  description: Agentes a consultar (opcional)
+                context:
+                  type: object
+              required:
+                - request
+      responses:
+        "200":
+          description: Coordinación completada
+
+  /gpt/workflow/execute:
+    post:
+      operationId: workflowExecute
+      summary: Ejecutar workflow completo
+      description: Coordinar múltiples agentes en secuencia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workflow_name:
+                  type: string
+                  example: "Campaign Analysis"
+                steps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      agent:
+                        type: string
+                      task:
+                        type: string
+      responses:
+        "200":
+          description: Workflow completado
+```
+
+════════════════════════════════════════════════════════════════════════════════
+PASO 3: AUTENTICACIÓN (OPCIONAL)
+════════════════════════════════════════════════════════════════════════════════
+
+Si quieres proteger tu API:
+
+1. En "Authentication", selecciona "API Key"
+
+2. Configura:
+   - Auth Type: API Key
+   - Auth URL: https://tu-base-url.com/auth
+   - (O usa bearer token si lo implementas)
+
+Por ahora, puedes dejar en "None" para desarrollo.
+
+
+════════════════════════════════════════════════════════════════════════════════
+PASO 4: CONFIGURAR INSTRUCCIONES A TUS GPTs
+════════════════════════════════════════════════════════════════════════════════
+
+En el campo "Instructions" de cada GPT, agrega algo como:
+
+
+PARA ADRIÁN (Analista de Datos):
+────────────────────────────────
+
+Tu rol es analista de datos especializado. Cuando completes un análisis:
+
+1. Llama a la acción "executeTask"
+2. Usa tu agent_id: "adrian_datos"
+3. Envía tu análisis en el campo "task"
+
+Ejemplo:
+- Si el usuario pide: "Analiza ventas de octubre"
+- Tú analizas y luego usas la acción:
+  agent_id: adrian_datos
+  task: "Análisis de ventas octubre: 150K EUR, crecimiento 12%, productos estrella..."
+
+
+PARA ANDRÉS (Director):
+───────────────────────
+
+Tu rol es Director que coordina al equipo. Cuando recibas una petición:
+
+1. Analiza qué especialistas necesitas
+2. Llama a "directorCoordinate" para coordinar
+3. O usa "workflowExecute" para ejecutar un plan en secuencia
+
+Ejemplo:
+- Usuario: "Quiero estrategia de expansión a Francia"
+- Tú usas directorCoordinate con:
+  request: "Estrategia expansión Francia Q1"
+  required_agents: ["adrian_datos", "leo_partners", "bruno_estrategia"]
+
+
+════════════════════════════════════════════════════════════════════════════════
+PASO 5: PRUEBAS
+════════════════════════════════════════════════════════════════════════════════
+
+1. En tu GPT, prueba escribiendo:
+   "Andrés, analiza el potencial de expansión a Alemania"
+
+2. Andrés debería:
+   - Reconocer que necesita datos (Adrian)
+   - Reconocer que necesita estrategia (Leo, Bruno)
+   - Usar la acción directorCoordinate
+
+3. Tu API recibirá la llamada y procesará
+
+
+════════════════════════════════════════════════════════════════════════════════
+IDS DE AGENTES PARA COPIAR
+════════════════════════════════════════════════════════════════════════════════
+
+Director:
+- andres_director
+
+Datos & BI:
+- adrian_datos
+
+Negocio:
+- leo_partners
+- bruno_estrategia
+- lalo_ventas
+
+Customer:
+- francisco_success
+- lucia_canales
+- aurora_atencion  (opcional, si lo agregan)
+
+Marketing:
+- diego_automatizacion
+- camila_branding
+
+Operaciones:
+- sofia_conversion
+- elena_inventario
+- carlos_logistica
+- valeria_legal
+- marco_fiscal
+
+
+════════════════════════════════════════════════════════════════════════════════
+ENDPOINTS DISPONIBLES
+════════════════════════════════════════════════════════════════════════════════
+
+POST /gpt/task/execute
+  → Ejecutar tarea con agente específico
+
+POST /gpt/director/coordinate
+  → Andrés coordina múltiples agentes
+
+GET /gpt/agents/list
+  → Listar todos los agentes
+
+POST /gpt/team/analyze
+  → Análisis paralelo del equipo
+
+POST /gpt/workflow/execute
+  → Ejecutar workflow en secuencia
+
+GET /gpt/health/team
+  → Verificar salud del equipo
+
+
+════════════════════════════════════════════════════════════════════════════════
+EJEMPLO COMPLETO: FLUJO EN TIEMPO REAL
+════════════════════════════════════════════════════════════════════════════════
+
+USUARIO: "Andrés, necesito estrategia de ventas para Black Friday"
+
+FLUJO:
+1. Andrés analiza la petición
+2. Decide que necesita: Adrian (datos), Bruno (estrategia), Diego (marketing)
+3. Usa /gpt/workflow/execute con los 3 agentes
+4. Cada uno recibe su tarea:
+   - Adrian: "Analiza datos de Black Friday históricos"
+   - Bruno: "Propón estrategia basada en análisis"
+   - Diego: "Diseña automatización de campaña"
+5. Cada respuesta se integra
+6. Andrés devuelve estrategia final completa
+
+RESULTADO: Usuario ve respuesta coordinada del equipo completo
+
+
+════════════════════════════════════════════════════════════════════════════════
+TIPS IMPORTANTES
+════════════════════════════════════════════════════════════════════════════════
+
+✓ La API debe estar corriendo (python main.py)
+✓ La URL debe ser pública (ngrok, Railway, etc)
+✓ Reemplazar "tu-base-url.com" con tu URL real
+✓ Probar cada Action antes de darla por lista
+✓ Usar el Swagger en /docs para entender mejor los endpoints
+✓ Ver logs en execution_history.json para debugging
+
+
+════════════════════════════════════════════════════════════════════════════════
+¿NECESITAS AYUDA?
+════════════════════════════════════════════════════════════════════════════════
+
+1. Swagger UI: http://localhost:8000/docs
+   → Prueba endpoints ahí primero
+
+2. Revisa TROUBLESHOOTING.txt
+
+3. Verifica que los IDs de agentes coincidan entre:
+   - config.py
+   - Tus instrucciones en GPT
+   - Lo que envías en las Actions
+
+
+════════════════════════════════════════════════════════════════════════════════

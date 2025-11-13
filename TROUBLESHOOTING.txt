@@ -1,0 +1,205 @@
+🔧 TROUBLESHOOTING Y DEBUGGING
+════════════════════════════════════════════════════════════════════════════════
+
+❌ PROBLEMA 1: "ModuleNotFoundError: No module named 'fastapi'"
+───────────────────────────────────────────────────────────────
+SOLUCIÓN:
+    pip install -r requirements.txt
+
+O instala manualmente:
+    pip install fastapi uvicorn pydantic openai python-dotenv
+
+
+❌ PROBLEMA 2: "OPENAI_API_KEY no configurada"
+──────────────────────────────────────────────
+CAUSA: El archivo .env no existe o está vacío
+
+SOLUCIÓN:
+    1. Verifica que existe el archivo .env en C:\PROYECTO1\
+    2. Abre .env y comprueba que tiene:
+       OPENAI_API_KEY=sk-tu-api-key-aqui
+    3. Reemplaza con tu API key real de OpenAI
+
+
+❌ PROBLEMA 3: "Connection refused" al acceder a http://localhost:8000
+────────────────────────────────────────────────────────────────────
+CAUSA: El servidor no está corriendo
+
+SOLUCIÓN:
+    1. Asegúrate de ejecutar: python main.py
+    2. El servidor debe mostrar:
+       "🚀 Iniciando Orquestador de Agentes IA"
+    3. Espera a que diga que está escuchando en puerto 8000
+
+
+❌ PROBLEMA 4: "Agente 'xxx' no encontrado"
+───────────────────────────────────────────
+CAUSA: Intentaste usar un agent_id que no existe
+
+SOLUCIÓN:
+    Los agentes disponibles son:
+    • analyst
+    • processor
+    • coordinator
+
+    Para agregar más, edita config/config.py
+
+
+❌ PROBLEMA 5: Timeout o conexión lenta
+──────────────────────────────────────
+CAUSA: OpenAI está tardando o no hay conexión
+
+SOLUCIÓN:
+    1. Verifica tu conexión a Internet
+    2. Comprueba que tu API key es válida
+    3. Intenta con un prompt más corto
+    4. Aumenta el timeout en config/config.py: AGENT_TIMEOUT = 120
+
+
+❌ PROBLEMA 6: "AuthenticationError" de OpenAI
+──────────────────────────────────────────────
+CAUSA: API key inválida o expirada
+
+SOLUCIÓN:
+    1. Ve a https://platform.openai.com/account/api-keys
+    2. Verifica que tu key está activa
+    3. Copia la key nuevamente (tal vez está corrupta)
+    4. Actualiza .env
+    5. Reinicia el servidor
+
+
+❌ PROBLEMA 7: "RateLimitError" - Too many requests
+─────────────────────────────────────────────────
+CAUSA: Alcanzaste el límite de API de OpenAI
+
+SOLUCIÓN:
+    1. Espera unos minutos antes de intentar de nuevo
+    2. Revisa tu plan en https://platform.openai.com
+    3. Considera aumentar tu crédito
+
+
+════════════════════════════════════════════════════════════════════════════════
+🔍 CÓMO DEBUGGEAR
+════════════════════════════════════════════════════════════════════════════════
+
+1. REVISA LOS LOGS
+   ────────────────
+   • Abre la carpeta logs/
+   • Busca el archivo execution_history.json
+   • Contiene todas las ejecuciones pasadas
+
+2. COMPRUEBA EL HISTORIAL
+   ──────────────────────
+   GET /history
+   
+   Esto te mostrará:
+   • Hora de ejecución
+   • Agent ID usado
+   • Estado (completed/failed)
+   • Errores si los hay
+
+3. PRUEBA LOS ENDPOINTS UNO A UNO
+   ────────────────────────────
+   a) GET /health
+      → Debe devolver: {"status": "healthy"}
+   
+   b) GET /agents
+      → Debe devolver lista de agentes
+   
+   c) POST /execute/simple
+      → Con un prompt de prueba
+
+
+4. MODO DEBUG EN PYTHON
+   ───────────────────
+   Ejecuta este script para debug:
+
+   from agents.orchestrator import AgentOrchestrator
+   from config.config import config
+
+   try:
+       config.validate()
+       print("✅ Configuración OK")
+   except Exception as e:
+       print(f"❌ Error: {e}")
+
+   orch = AgentOrchestrator()
+   result = orch.execute_simple_task(
+       "analyst",
+       "Prueba simple"
+   )
+   print(result)
+
+
+5. VERIFICAR IMPORTES
+   ─────────────────
+   Ejecuta en terminal:
+
+   python -c "from config.config import config; print(config.AGENTS.keys())"
+   
+   Debe mostrar: dict_keys(['analyst', 'processor', 'coordinator'])
+
+
+════════════════════════════════════════════════════════════════════════════════
+🚨 ERRORES COMUNES Y SOLUCIONES
+════════════════════════════════════════════════════════════════════════════════
+
+ERROR: "ImportError: cannot import name 'FastAPI'"
+→ SOLUCIÓN: pip install fastapi
+
+ERROR: "JSONDecodeError"
+→ SOLUCIÓN: Revisa que el prompt es válido JSON
+
+ERROR: "ssl.SSLError"
+→ SOLUCIÓN: Problema de conexión, reinicia o verifica proxy
+
+ERROR: "Pydantic validation error"
+→ SOLUCIÓN: Comprueba que estés enviando los campos correctos
+
+
+════════════════════════════════════════════════════════════════════════════════
+💡 TIPS PARA MEJOR RENDIMIENTO
+════════════════════════════════════════════════════════════════════════════════
+
+✓ PROMPTS:
+  • Sé específico en tus prompts
+  • Proporciona contexto suficiente
+  • Evita prompts muy largos (consumen más tokens)
+
+✓ MODOS:
+  • Simple: Para tareas rápidas
+  • Pipeline: Para análisis progresivo
+  • Paralelo: Para múltiples perspectivas
+
+✓ AGENTES:
+  • Personaliza las instrucciones en config.py
+  • Agrega agentes especializados según tus necesidades
+  • Prueba combinaciones diferentes
+
+✓ COSTO:
+  • Pipeline (3 agentes) = 3x el costo de Simple
+  • Prompts largos = más tokens = más costo
+  • Monitorea con: https://platform.openai.com/account/billing/usage
+
+
+════════════════════════════════════════════════════════════════════════════════
+📞 RECURSOS DE AYUDA
+════════════════════════════════════════════════════════════════════════════════
+
+📚 Documentación oficial:
+   • FastAPI: https://fastapi.tiangolo.com/
+   • OpenAI: https://platform.openai.com/docs
+   • Pydantic: https://docs.pydantic.dev/
+
+🆘 Soporte OpenAI:
+   https://help.openai.com/
+
+📖 Este proyecto:
+   • Lee README.md para documentación completa
+   • Lee QUICK_START.txt para inicio rápido
+   • Lee RESUMEN_FINAL.txt para overview
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+¿Más preguntas? Revisa el código, está bien comentado y es autodocumentado.
