@@ -33,7 +33,7 @@ def custom_openapi():
         description=app.description,
     )
 
-    openapi_schema["servers"] = [{"url": config.PUBLIC_URL.rstrip("/")}]
+    openapi_schema["servers"] = [{"url": config.PUBLIC_URL.rstrip("/") or "https://agentes-ia-jamones.onrender.com"}]
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
