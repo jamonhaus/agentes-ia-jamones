@@ -1,0 +1,228 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Orquestador de Agentes IA - Jamonhaus",
+    "description": "API para coordinación y colaboración entre agentes especializados en negocio de jamones premium",
+    "version": "1.0.5"
+  },
+  "servers": [
+    {
+      "url": "https://agentes-ia-jamones.onrender.com"
+    }
+  ],
+  "paths": {
+    "/gpt/smart/request": {
+      "post": {
+        "description": "Envía una petición compleja al orquestador. El director Andrés analizará, asignará agentes especializados, coordinará su trabajo y consolidará la respuesta final. Los agentes pueden colaborar entre sí automáticamente.",
+        "operationId": "smartRequest",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["request"],
+                "properties": {
+                  "request": {
+                    "type": "string",
+                    "description": "La petición del usuario que requiere coordinación de múltiples agentes especializados"
+                  },
+                  "context": {
+                    "type": "object",
+                    "description": "Contexto adicional opcional para la petición",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta exitosa con resultado consolidado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "peticion_original": {
+                      "type": "string",
+                      "description": "La petición original del usuario"
+                    },
+                    "tipo_trabajo": {
+                      "type": "string",
+                      "description": "Tipo de trabajo identificado por el director"
+                    },
+                    "equipo_participante": {
+                      "type": "array",
+                      "description": "Lista de agentes que participaron",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "agente": {
+                            "type": "string"
+                          },
+                          "tarea": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "conversaciones_entre_agentes": {
+                      "type": "array",
+                      "description": "Conversaciones que tuvieron los agentes entre sí para colaborar",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "from_agent": {
+                            "type": "string",
+                            "description": "Agente que inició la consulta"
+                          },
+                          "to_agent": {
+                            "type": "string",
+                            "description": "Agente consultado"
+                          },
+                          "message": {
+                            "type": "string",
+                            "description": "Pregunta realizada"
+                          },
+                          "response": {
+                            "type": "string",
+                            "description": "Respuesta recibida"
+                          },
+                          "timestamp": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    },
+                    "respuesta_final": {
+                      "type": "string",
+                      "description": "Respuesta consolidada final del director integrando todos los análisis"
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/task/execute": {
+      "post": {
+        "description": "Ejecuta una tarea específica con un agente individual sin coordinación del director",
+        "operationId": "executeTask",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["agent_id", "task"],
+                "properties": {
+                  "agent_id": {
+                    "type": "string",
+                    "enum": [
+                      "andres_director",
+                      "adrian_datos",
+                      "leo_partners",
+                      "bruno_estrategia",
+                      "francisco_success",
+                      "lucia_canales",
+                      "diego_automatizacion",
+                      "camila_branding",
+                      "valeria_legal",
+                      "sofia_conversion",
+                      "elena_inventario",
+                      "carlos_logistica",
+                      "marco_fiscal",
+                      "lalo_ventas",
+                      "antonio_prompts",
+                      "nexus_valiant",
+                      "markus_garcia",
+                      "aurora_atencion"
+                    ],
+                    "description": "ID del agente específico a ejecutar"
+                  },
+                  "task": {
+                    "type": "string",
+                    "description": "Tarea específica para el agente"
+                  },
+                  "context": {
+                    "type": "object",
+                    "description": "Contexto adicional",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta del agente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agent": {
+                      "type": "string"
+                    },
+                    "task_received": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "response": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "description": "Verificar estado del orquestador y agentes disponibles",
+        "operationId": "getStatus",
+        "responses": {
+          "200": {
+            "description": "Estado del sistema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "versión": {
+                      "type": "string"
+                    },
+                    "agentes_disponibles": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

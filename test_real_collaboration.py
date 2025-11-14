@@ -22,15 +22,16 @@ def test_real_collaboration():
     
     # Petición compleja que DEBERÍA generar colaboración
     request = """
-Quiero lanzar una campaña de Black Friday para jamones ibéricos premium en Madrid y Barcelona.
-Necesito:
-1. Análisis de inventario actual y stock necesario
-2. Estrategia de marketing y contenido para redes sociales
-3. Plan de logística y distribución express
-4. Análisis de conversión y optimización del funnel
-5. Estrategia de fidelización post-compra
-
-Objetivo: 10,000 ventas en 72 horas
+Necesito análisis URGENTE de precios de competencia de jamón ibérico en Inglaterra, Francia, Alemania e Italia.
+Compara con nuestros precios actuales y dame:
+1. Precios promedio por país y formato (pieza, loncheado, sobres)
+2. Márgenes de la competencia vs nuestros márgenes
+3. Posicionamiento competitivo por mercado
+4. Implicaciones fiscales y aduaneras de ajustar precios
+5. Requisitos legales de etiquetado por país
+6. Plan logístico para distribución competitiva
+7. Estrategia de marketing para diferenciarnos
+8. Análisis de viabilidad de alianzas B2B en cada mercado
 """
     
     print("\n📝 PETICIÓN COMPLEJA:")
