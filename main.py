@@ -2,6 +2,7 @@ from copy import deepcopy
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
+from fastapi.middleware.cors import CORSMiddleware
 from config.config import config
 from agents.orchestrator import AgentOrchestrator
 from agents.gpt_actions import router as gpt_router
@@ -20,6 +21,15 @@ app = FastAPI(
     title=config.__class__.__name__,
     description="Orquestador de agentes de IA con OpenAI - Colaboración entre agentes activada",
     version="1.1.0"
+)
+
+# Configurar CORS para permitir ChatGPT
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://chat.openai.com", "https://chatgpt.com"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
