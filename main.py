@@ -79,8 +79,9 @@ async def root():
     """Endpoint raíz - verificar que la API está funcionando"""
     return {
         "mensaje": "Orquestador de Agentes IA activo",
-        "versión": "1.0.0",
-        "agentes_disponibles": list(config.AGENTS.keys())
+        "versión": "1.0.4",
+        "agentes_disponibles": list(config.AGENTS.keys()),
+        "total_agentes": len(config.AGENTS)
     }
 
 @app.get("/agents", include_in_schema=False)

@@ -67,9 +67,11 @@ class AIAgentClient:
                         "properties": {
                             "agent_name": {
                                 "type": "string",
-                                "enum": ["adrian_datos", "leo_partners", "bruno_estrategia", "francisco_success", 
-                                        "lucia_canales", "diego_automatizacion", "camila_branding", "valeria_legal",
-                                        "sofia_conversion", "elena_inventario", "carlos_logistica", "marco_fiscal", "lalo_ventas"],
+                                "enum": ["andres_director", "adrian_datos", "leo_partners", "bruno_estrategia", 
+                                        "francisco_success", "lucia_canales", "diego_automatizacion", "camila_branding", 
+                                        "valeria_legal", "sofia_conversion", "elena_inventario", "carlos_logistica", 
+                                        "marco_fiscal", "lalo_ventas", "antonio_prompts", "nexus_arquitecto", 
+                                        "markus_marketing", "aurora_atencion"],
                                 "description": "Nombre del agente a consultar"
                             },
                             "pregunta": {
