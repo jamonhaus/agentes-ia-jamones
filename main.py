@@ -48,7 +48,7 @@ app.include_router(gpt_router)
 
 # ============= ENDPOINTS =============
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
     """Endpoint raíz - verificar que la API está funcionando"""
     return {
@@ -57,7 +57,7 @@ async def root():
         "agentes_disponibles": list(config.AGENTS.keys())
     }
 
-@app.get("/agents")
+@app.get("/agents", include_in_schema=False)
 async def list_agents():
     """Listar todos los agentes disponibles"""
     agents = []
@@ -69,7 +69,7 @@ async def list_agents():
         })
     return {"agentes": agents}
 
-@app.post("/execute/simple")
+@app.post("/execute/simple", include_in_schema=False)
 async def execute_simple_task(request: AgentRequest):
     """
     Ejecutar una tarea simple con un agente específico
@@ -98,7 +98,7 @@ async def execute_simple_task(request: AgentRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/execute/pipeline")
+@app.post("/execute/pipeline", include_in_schema=False)
 async def execute_pipeline(request: PipelineRequest):
     """
     Ejecutar un pipeline donde la salida de un agente es entrada del siguiente
@@ -127,7 +127,7 @@ async def execute_pipeline(request: PipelineRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/execute/parallel")
+@app.post("/execute/parallel", include_in_schema=False)
 async def execute_parallel_analysis(request: ParallelAnalysisRequest):
     """
     Ejecutar el mismo prompt en múltiples agentes en paralelo
@@ -156,7 +156,7 @@ async def execute_parallel_analysis(request: ParallelAnalysisRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/history")
+@app.get("/history", include_in_schema=False)
 async def get_execution_history():
     """Obtener el historial de todas las ejecuciones"""
     return {
@@ -164,7 +164,7 @@ async def get_execution_history():
         "ejecuciones": orchestrator.execution_history
     }
 
-@app.get("/health")
+@app.get("/health", include_in_schema=False)
 async def health_check():
     """Verificar que la API está saludable"""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}

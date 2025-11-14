@@ -1,5 +1,9 @@
 import json
-from openai import OpenAI
+import time
+from typing import Optional, List
+
+from openai import OpenAI, APIError, APIConnectionError, APITimeoutError
+
 from config.config import config
 
 class AIAgentClient:
@@ -9,7 +13,7 @@ class AIAgentClient:
         self.client = OpenAI(api_key=api_key)
         self.model = config.OPENAI_MODEL
     
-    def call_agent(self, agent_id: str, prompt: str, context: dict = None) -> str:
+    def call_agent(self, agent_id: str, prompt: str, context: dict = None, *, max_retries: int = 3, timeout: float = 30.0) -> str:
         """
         Llama a un agente con un prompt específico
         
@@ -29,19 +33,37 @@ class AIAgentClient:
             system_prompt += f"\n\nContexto adicional: {json.dumps(context, ensure_ascii=False)}"
         
         # Llamar a OpenAI
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=2000
-        )
-        
-        return response.choices[0].message.content
-    
-    def call_workflow(self, agents_sequence: list, initial_prompt: str = "", step_tasks: list | None = None) -> dict:
+        attempt = 0
+        last_error: Optional[Exception] = None
+
+        while attempt < max_retries:
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=2000,
+                    timeout=timeout
+                )
+                return response.choices[0].message.content
+            except (APIError, APIConnectionError, APITimeoutError) as exc:
+                last_error = exc
+                attempt += 1
+                if attempt >= max_retries:
+                    raise
+                sleep_time = min(2 ** attempt, 8)
+                time.sleep(sleep_time)
+            except Exception as exc:
+                last_error = exc
+                raise
+
+        if last_error:
+            raise last_error
+
+    def call_workflow(self, agents_sequence: List[str], initial_prompt: str = "", step_tasks: Optional[List[str]] = None) -> dict:
         """
         Ejecuta un workflow coordinado entre múltiples agentes
         
@@ -83,7 +105,9 @@ class AIAgentClient:
                 "agent": agent_id,
                 "response": response,
                 "order": len(results) + 1,
-                "prompt_sent": prompt
+                "prompt_sent": prompt,
+                "task": step_task,
+                "previous_output": previous_output
             }
             previous_output = response
         
