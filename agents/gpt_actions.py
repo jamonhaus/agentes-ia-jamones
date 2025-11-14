@@ -53,18 +53,7 @@ class WorkflowRequest(BaseModel):
 
 @router.post("/task/execute")
 async def execute_agent_task(request: TaskRequest):
-    """
-    ENDPOINT PARA ACTIONS: Ejecutar tarea con agente específico
-    
-    Use this in your GPT Actions to delegate tasks to specialists
-    
-    Example from Andrés (Director):
-    {
-        "agent_id": "adrian_datos",
-        "task": "Analiza las ventas del último mes por país",
-        "context": {"period": "last_month"}
-    }
-    """
+    """ACTION: Ejecutar tarea con agente. Ej: {"agent_id": "adrian_datos", "task": "Analiza ventas Q4", "context": {}}"""
     try:
         agent_config = config.get_agent(request.agent_id)
         execution = orchestrator.execute_simple_task(request.agent_id, request.task)
@@ -87,18 +76,7 @@ async def execute_agent_task(request: TaskRequest):
 
 @router.post("/director/coordinate")
 async def director_coordinate(request: DirectorRequest):
-    """
-    ENDPOINT PARA ACTIONS: Director (Andrés) coordina múltiples agentes
-    
-    Use this when you need complex coordination
-    
-    Example:
-    {
-        "request": "Necesito análisis de ventas Q4 y propuesta de estrategia",
-        "required_agents": ["adrian_datos", "bruno_estrategia"],
-        "context": {}
-    }
-    """
+    """ACTION: Director coordina agentes. Ej: {"request": "Analizar ventas Q4", "required_agents": ["adrian_datos"], "context": {}}"""
     try:
         # El Director (Andrés) recibe la petición
         # Validar agentes solicitados (o usar todos si no se especifican)
@@ -137,11 +115,7 @@ async def director_coordinate(request: DirectorRequest):
 
 @router.get("/agents/list")
 async def list_all_agents():
-    """
-    ENDPOINT PARA ACTIONS: Listar todos los agentes disponibles
-    
-    Use this in your GPT to understand who's available in the team
-    """
+    """ACTION: Lista todos los agentes del equipo con sus roles y descripciones"""
     agents_list = []
     for agent_id, agent_config in config.AGENTS.items():
         agents_list.append({
@@ -159,7 +133,7 @@ async def list_all_agents():
 
 @router.post("/team/analyze")
 async def team_analyze(request: TeamCoordinationRequest):
-    """ENDPOINT PARA ACTIONS: Coordinación del equipo. Usa varios agentes y fusiona hallazgos. Ejemplo: {"project": "Expansion Q1", "objective": "Validar mercados", "agents": ["adrian_datos", "bruno_estrategia"]}"""
+    """ACTION: Coordinación de equipo. Varios agentes aportan análisis sobre un mismo proyecto. Ejemplo: {"project": "Expansion Q1", "objective": "Validar mercados", "agents": ["adrian_datos", "bruno_estrategia"]}"""
     try:
         try:
             for agent_id in request.agents:
@@ -198,21 +172,7 @@ async def team_analyze(request: TeamCoordinationRequest):
 
 @router.post("/workflow/execute")
 async def execute_workflow(request: WorkflowRequest):
-    """
-    ENDPOINT PARA ACTIONS: Ejecutar workflow completo (pipeline)
-    
-    Agents work in sequence, each one using previous output
-    
-    Example:
-    {
-        "workflow_name": "Marketing Campaign Analysis",
-        "steps": [
-            {"agent": "adrian_datos", "task": "Analiza data histórica de campañas"},
-            {"agent": "diego_automatizacion", "task": "Propón automatizaciones basadas en análisis"},
-            {"agent": "andres_director", "task": "Revisa y da aprobación final"}
-        ]
-    }
-    """
+    """ACTION: Pipeline secuencial. Ej: {"workflow_name": "Análisis", "steps": [{"agent": "adrian_datos", "task": "Analizar"}]}"""
     try:
         if not request.steps:
             raise HTTPException(status_code=400, detail="No workflow steps provided")
@@ -257,11 +217,7 @@ async def execute_workflow(request: WorkflowRequest):
 
 @router.get("/health/team")
 async def team_health():
-    """
-    ENDPOINT PARA ACTIONS: Verificar salud del equipo
-    
-    Check that all agents are available
-    """
+    """ACTION: Verifica que todos los agentes estén disponibles"""
     team_status = {
         "total_agents": len(config.AGENTS),
         "agents": {}

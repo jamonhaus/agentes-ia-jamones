@@ -1,1 +1,570 @@
-{"openapi": "3.1.0", "info": {"title": "Config", "description": "Orquestador de agentes de IA con OpenAI", "version": "1.0.0"}, "paths": {"/gpt/task/execute": {"post": {"tags": ["GPT Actions"], "summary": "Execute Agent Task", "description": "ENDPOINT PARA ACTIONS: Ejecutar tarea con agente específico\n\nUse this in your GPT Actions to delegate tasks to specialists\n\nExample from Andrés (Director):\n{\n    \"agent_id\": \"adrian_datos\",\n    \"task\": \"Analiza las ventas del último mes por país\",\n    \"context\": {\"period\": \"last_month\"}\n}", "operationId": "execute_agent_task_gpt_task_execute_post", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/TaskRequest"}}}, "required": true}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/gpt/director/coordinate": {"post": {"tags": ["GPT Actions"], "summary": "Director Coordinate", "description": "ENDPOINT PARA ACTIONS: Director (Andrés) coordina múltiples agentes\n\nUse this when you need complex coordination\n\nExample:\n{\n    \"request\": \"Necesito análisis de ventas Q4 y propuesta de estrategia\",\n    \"required_agents\": [\"adrian_datos\", \"bruno_estrategia\"],\n    \"context\": {}\n}", "operationId": "director_coordinate_gpt_director_coordinate_post", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/DirectorRequest"}}}, "required": true}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/gpt/agents/list": {"get": {"tags": ["GPT Actions"], "summary": "List All Agents", "description": "ENDPOINT PARA ACTIONS: Listar todos los agentes disponibles\n\nUse this in your GPT to understand who's available in the team", "operationId": "list_all_agents_gpt_agents_list_get", "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}}}}, "/gpt/team/analyze": {"post": {"tags": ["GPT Actions"], "summary": "Team Analyze", "description": "ENDPOINT PARA ACTIONS: Coordinación del equipo. Usa varios agentes y fusiona hallazgos. Ejemplo: {\"project\": \"Expansion Q1\", \"objective\": \"Validar mercados\", \"agents\": [\"adrian_datos\", \"bruno_estrategia\"]}", "operationId": "team_analyze_gpt_team_analyze_post", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/TeamCoordinationRequest"}}}, "required": true}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/gpt/workflow/execute": {"post": {"tags": ["GPT Actions"], "summary": "Execute Workflow", "description": "ENDPOINT PARA ACTIONS: Ejecutar workflow completo (pipeline)\n\nAgents work in sequence, each one using previous output\n\nExample:\n{\n    \"workflow_name\": \"Marketing Campaign Analysis\",\n    \"steps\": [\n        {\"agent\": \"adrian_datos\", \"task\": \"Analiza data histórica de campañas\"},\n        {\"agent\": \"diego_automatizacion\", \"task\": \"Propón automatizaciones basadas en análisis\"},\n        {\"agent\": \"andres_director\", \"task\": \"Revisa y da aprobación final\"}\n    ]\n}", "operationId": "execute_workflow_gpt_workflow_execute_post", "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/WorkflowRequest"}}}, "required": true}, "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}, "422": {"description": "Validation Error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HTTPValidationError"}}}}}}}, "/gpt/health/team": {"get": {"tags": ["GPT Actions"], "summary": "Team Health", "description": "ENDPOINT PARA ACTIONS: Verificar salud del equipo\n\nCheck that all agents are available", "operationId": "team_health_gpt_health_team_get", "responses": {"200": {"description": "Successful Response", "content": {"application/json": {"schema": {}}}}}}}}, "components": {"schemas": {"DirectorRequest": {"properties": {"request": {"type": "string", "title": "Request"}, "required_agents": {"anyOf": [{"items": {"type": "string"}, "type": "array"}, {"type": "null"}], "title": "Required Agents"}, "context": {"anyOf": [{"additionalProperties": true, "type": "object"}, {"type": "null"}], "title": "Context"}}, "type": "object", "required": ["request"], "title": "DirectorRequest", "description": "Solicitud al Director (Andrés) para orquestar"}, "HTTPValidationError": {"properties": {"detail": {"items": {"$ref": "#/components/schemas/ValidationError"}, "type": "array", "title": "Detail"}}, "type": "object", "title": "HTTPValidationError"}, "TaskRequest": {"properties": {"agent_id": {"type": "string", "title": "Agent Id"}, "task": {"type": "string", "title": "Task"}, "context": {"anyOf": [{"additionalProperties": true, "type": "object"}, {"type": "null"}], "title": "Context"}}, "type": "object", "required": ["agent_id", "task"], "title": "TaskRequest", "description": "Solicitud de tarea para un agente especializado"}, "TeamCoordinationRequest": {"properties": {"project": {"type": "string", "title": "Project"}, "objective": {"type": "string", "title": "Objective"}, "agents": {"items": {"type": "string"}, "type": "array", "title": "Agents"}, "context": {"anyOf": [{"additionalProperties": true, "type": "object"}, {"type": "null"}], "title": "Context"}}, "type": "object", "required": ["project", "objective", "agents"], "title": "TeamCoordinationRequest", "description": "Solicitud de coordinación entre múltiples agentes"}, "ValidationError": {"properties": {"loc": {"items": {"anyOf": [{"type": "string"}, {"type": "integer"}]}, "type": "array", "title": "Location"}, "msg": {"type": "string", "title": "Message"}, "type": {"type": "string", "title": "Error Type"}}, "type": "object", "required": ["loc", "msg", "type"], "title": "ValidationError"}, "WorkflowRequest": {"properties": {"workflow_name": {"anyOf": [{"type": "string"}, {"type": "null"}], "title": "Workflow Name", "default": "Unnamed Workflow"}, "steps": {"items": {"$ref": "#/components/schemas/WorkflowStep"}, "type": "array", "title": "Steps"}, "context": {"anyOf": [{"additionalProperties": true, "type": "object"}, {"type": "null"}], "title": "Context"}}, "type": "object", "required": ["steps"], "title": "WorkflowRequest", "description": "Solicitud para ejecutar un workflow completo"}, "WorkflowStep": {"properties": {"agent": {"type": "string", "title": "Agent"}, "task": {"type": "string", "title": "Task"}}, "type": "object", "required": ["agent", "task"], "title": "WorkflowStep", "description": "Paso individual dentro de un workflow encadenado"}}}, "servers": [{"url": "https://agentes-ia-jamones.onrender.com"}]}
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Config",
+    "description": "Orquestador de agentes de IA con OpenAI",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/gpt/task/execute": {
+      "post": {
+        "tags": [
+          "GPT Actions"
+        ],
+        "summary": "Execute Agent Task",
+        "description": "ACTION: Ejecutar tarea con agente. Ej: {\"agent_id\": \"adrian_datos\", \"task\": \"Analiza ventas Q4\", \"context\": {}}",
+        "operationId": "execute_agent_task_gpt_task_execute_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "agent_id",
+                  "task"
+                ],
+                "properties": {
+                  "agent_id": {
+                    "type": "string",
+                    "title": "Agent Id"
+                  },
+                  "task": {
+                    "type": "string",
+                    "title": "Task"
+                  },
+                  "context": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Context"
+                  }
+                },
+                "description": "Solicitud de tarea para un agente especializado"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/director/coordinate": {
+      "post": {
+        "tags": [
+          "GPT Actions"
+        ],
+        "summary": "Director Coordinate",
+        "description": "ACTION: Director coordina agentes. Ej: {\"request\": \"Analizar ventas Q4\", \"required_agents\": [\"adrian_datos\"], \"context\": {}}",
+        "operationId": "director_coordinate_gpt_director_coordinate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "request"
+                ],
+                "properties": {
+                  "request": {
+                    "type": "string",
+                    "title": "Request"
+                  },
+                  "required_agents": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Required Agents"
+                  },
+                  "context": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Context"
+                  }
+                },
+                "description": "Solicitud al Director (Andrés) para orquestar"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/agents/list": {
+      "get": {
+        "tags": [
+          "GPT Actions"
+        ],
+        "summary": "List All Agents",
+        "description": "ACTION: Lista todos los agentes del equipo con sus roles y descripciones",
+        "operationId": "list_all_agents_gpt_agents_list_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/team/analyze": {
+      "post": {
+        "tags": [
+          "GPT Actions"
+        ],
+        "summary": "Team Analyze",
+        "description": "ACTION: Coordinación de equipo. Varios agentes aportan análisis sobre un mismo proyecto. Ejemplo: {\"project\": \"Expansion Q1\", \"objective\": \"Validar mercados\", \"agents\": [\"adrian_datos\", \"bruno_estrategia\"]}",
+        "operationId": "team_analyze_gpt_team_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "project",
+                  "objective",
+                  "agents"
+                ],
+                "properties": {
+                  "project": {
+                    "type": "string",
+                    "title": "Project"
+                  },
+                  "objective": {
+                    "type": "string",
+                    "title": "Objective"
+                  },
+                  "agents": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "title": "Agents"
+                  },
+                  "context": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Context"
+                  }
+                },
+                "description": "Solicitud de coordinación entre múltiples agentes"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/workflow/execute": {
+      "post": {
+        "tags": [
+          "GPT Actions"
+        ],
+        "summary": "Execute Workflow",
+        "description": "ACTION: Pipeline secuencial. Ej: {\"workflow_name\": \"Análisis\", \"steps\": [{\"agent\": \"adrian_datos\", \"task\": \"Analizar\"}]}",
+        "operationId": "execute_workflow_gpt_workflow_execute_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "steps"
+                ],
+                "properties": {
+                  "workflow_name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Workflow Name",
+                    "default": "Unnamed Workflow"
+                  },
+                  "steps": {
+                    "items": {
+                      "$ref": "#/components/schemas/WorkflowStep"
+                    },
+                    "type": "array",
+                    "title": "Steps"
+                  },
+                  "context": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Context"
+                  }
+                },
+                "description": "Solicitud para ejecutar un workflow completo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/health/team": {
+      "get": {
+        "tags": [
+          "GPT Actions"
+        ],
+        "summary": "Team Health",
+        "description": "ACTION: Verifica que todos los agentes estén disponibles",
+        "operationId": "team_health_gpt_health_team_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DirectorRequest": {
+        "properties": {
+          "request": {
+            "type": "string",
+            "title": "Request"
+          },
+          "required_agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Agents"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request"
+        ],
+        "title": "DirectorRequest",
+        "description": "Solicitud al Director (Andrés) para orquestar"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "TaskRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "task": {
+            "type": "string",
+            "title": "Task"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "task"
+        ],
+        "title": "TaskRequest",
+        "description": "Solicitud de tarea para un agente especializado"
+      },
+      "TeamCoordinationRequest": {
+        "properties": {
+          "project": {
+            "type": "string",
+            "title": "Project"
+          },
+          "objective": {
+            "type": "string",
+            "title": "Objective"
+          },
+          "agents": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Agents"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project",
+          "objective",
+          "agents"
+        ],
+        "title": "TeamCoordinationRequest",
+        "description": "Solicitud de coordinación entre múltiples agentes"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WorkflowRequest": {
+        "properties": {
+          "workflow_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Name",
+            "default": "Unnamed Workflow"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/WorkflowStep"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "steps"
+        ],
+        "title": "WorkflowRequest",
+        "description": "Solicitud para ejecutar un workflow completo"
+      },
+      "WorkflowStep": {
+        "properties": {
+          "agent": {
+            "type": "string",
+            "title": "Agent"
+          },
+          "task": {
+            "type": "string",
+            "title": "Task"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent",
+          "task"
+        ],
+        "title": "WorkflowStep",
+        "description": "Paso individual dentro de un workflow encadenado"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://agentes-ia-jamones.onrender.com"
+    }
+  ]
+}

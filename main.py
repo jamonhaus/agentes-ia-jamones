@@ -1,3 +1,4 @@
+from copy import deepcopy
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
@@ -34,6 +35,29 @@ def custom_openapi():
     )
 
     openapi_schema["servers"] = [{"url": config.PUBLIC_URL.rstrip("/") or "https://agentes-ia-jamones.onrender.com"}]
+
+    # For GPT Actions compatibility, inline ALL request schemas (avoid $ref)
+    gpt_endpoints_schemas = {
+        "/gpt/task/execute": "TaskRequest",
+        "/gpt/director/coordinate": "DirectorRequest",
+        "/gpt/team/analyze": "TeamCoordinationRequest",
+        "/gpt/workflow/execute": "WorkflowRequest"
+    }
+    
+    for endpoint_path, schema_name in gpt_endpoints_schemas.items():
+        try:
+            component = openapi_schema["components"]["schemas"][schema_name]
+            inline_schema = {
+                "type": "object",
+                "required": component.get("required", []),
+                "properties": deepcopy(component.get("properties", {})),
+                "description": component.get("description", "")
+            }
+            request_body_path = openapi_schema["paths"][endpoint_path]["post"]["requestBody"]["content"]["application/json"]
+            request_body_path["schema"] = inline_schema
+        except KeyError:
+            pass
+
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
