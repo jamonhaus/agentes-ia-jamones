@@ -44,6 +44,8 @@ def custom_openapi():
         "/gpt/workflow/execute": "WorkflowRequest"
     }
     
+    # /gpt/smart/request usa Dict[str, Any] - ya está inline por defecto, no necesita procesamiento
+    
     for endpoint_path, schema_name in gpt_endpoints_schemas.items():
         try:
             component = openapi_schema["components"]["schemas"][schema_name]

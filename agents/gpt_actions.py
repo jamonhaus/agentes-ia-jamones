@@ -54,30 +54,10 @@ class WorkflowRequest(BaseModel):
 @router.post("/smart/request")
 async def smart_request(request: Dict[str, Any]):
     """
-    🎯 ENDPOINT PRINCIPAL - COORDINACIÓN AUTOMÁTICA
+    ENDPOINT PRINCIPAL: Coordinación automática completa
     
-    Este es el endpoint que debes usar por defecto en tu GPT.
-    
-    El usuario hace una petición → El orquestador automáticamente:
-    1. Analiza qué tipo de trabajo es
-    2. El Director (Andrés) decide qué agentes necesita
-    3. Reparte el trabajo entre ellos
-    4. Ejecuta en paralelo o secuencia según corresponda
-    5. Consolida todos los resultados
-    6. Entrega la respuesta final integrada
-    
-    Ejemplo:
-    {
-        "request": "Necesito un estudio de mercado para expandirnos a Madrid",
-        "context": {"presupuesto": "50k", "deadline": "Q1 2024"}
-    }
-    
-    El sistema automáticamente involucrará a los agentes necesarios:
-    - Adrián (datos de mercado)
-    - Leo (partners potenciales)
-    - Bruno (estrategia de entrada)
-    - Valeria (legal)
-    Y Andrés consolidará todo en un informe único.
+    Director analiza, decide equipo, ejecuta en paralelo y consolida resultados.
+    Ej: {"request": "Estudio mercado Madrid", "context": {}}
     """
     try:
         user_request = request.get("request")
