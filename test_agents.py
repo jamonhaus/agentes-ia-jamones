@@ -14,7 +14,7 @@ def test_simple_task():
     
     try:
         result = orchestrator.execute_simple_task(
-            agent_id="analyst",
+            agent_id="adrian_datos",
             prompt="¿Cuáles son las 3 principales ventajas de usar IA en análisis de datos?"
         )
         
@@ -36,7 +36,7 @@ def test_pipeline():
     
     try:
         result = orchestrator.execute_pipeline(
-            agents_sequence=["analyst", "processor", "coordinator"],
+            agents_sequence=["adrian_datos", "bruno_estrategia", "andres_director"],
             initial_prompt="Dame 3 ideas innovadoras para mejorar la educación online"
         )
         

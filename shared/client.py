@@ -26,7 +26,7 @@ class AIAgentClient:
         Llama a un agente con un prompt específico
         
         Args:
-            agent_id: ID del agente (analyst, processor, coordinator)
+            agent_id: ID del agente (adrian_datos, bruno_estrategia, andres_director, etc.)
             prompt: Prompt a enviar al agente
             context: Contexto adicional para el agente
             

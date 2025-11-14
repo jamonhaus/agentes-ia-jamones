@@ -102,7 +102,7 @@ async def execute_simple_task(request: AgentRequest):
     
     Ejemplo:
     {
-        "agent_id": "analyst",
+        "agent_id": "adrian_datos",
         "prompt": "Analiza este conjunto de datos...",
         "context": {}
     }
@@ -131,7 +131,7 @@ async def execute_pipeline(request: PipelineRequest):
     
     Ejemplo:
     {
-        "agents_sequence": ["analyst", "processor", "coordinator"],
+        "agents_sequence": ["adrian_datos", "bruno_estrategia", "andres_director"],
         "initial_prompt": "Analiza estos datos y crea un reporte..."
     }
     """
@@ -161,7 +161,7 @@ async def execute_parallel_analysis(request: ParallelAnalysisRequest):
     Ejemplo:
     {
         "prompt": "¿Cuál es tu análisis sobre esto?",
-        "agents": ["analyst", "processor"]
+        "agents": ["adrian_datos", "bruno_estrategia"]
     }
     """
     try:
