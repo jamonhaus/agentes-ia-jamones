@@ -165,6 +165,10 @@ EQUIPO DISPONIBLE:
 - carlos_logistica: Logística y SCM
 - marco_fiscal: Fiscal e internacional
 - lalo_ventas: Ventas y sourcing
+- antonio_prompts: Mentor IA y optimización de prompts
+- nexus_valiant: Arquitecto digital y redes sociales
+- markus_garcia: Marketing digital avanzado
+- aurora_atencion: Atención cliente multilingüe
 
 INSTRUCCIONES:
 1. Analiza qué tipo de petición es (estudio de mercado, análisis de ventas, expansión, etc.)
