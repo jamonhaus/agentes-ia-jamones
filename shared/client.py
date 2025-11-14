@@ -21,9 +21,7 @@ class AIAgentClient:
         Returns:
             Respuesta del agente como string
         """
-        agent_config = config.AGENTS.get(agent_id)
-        if not agent_config:
-            raise ValueError(f"Agente {agent_id} no encontrado")
+        agent_config = config.get_agent(agent_id)
         
         # Preparar el sistema de instrucciones
         system_prompt = agent_config["instructions"]
@@ -43,7 +41,7 @@ class AIAgentClient:
         
         return response.choices[0].message.content
     
-    def call_workflow(self, agents_sequence: list, initial_prompt: str) -> dict:
+    def call_workflow(self, agents_sequence: list, initial_prompt: str = "", step_tasks: list | None = None) -> dict:
         """
         Ejecuta un workflow coordinado entre múltiples agentes
         
@@ -55,16 +53,38 @@ class AIAgentClient:
             Dict con resultados de cada agente
         """
         results = {}
-        current_input = initial_prompt
-        
-        for agent_id in agents_sequence:
-            response = self.call_agent(agent_id, current_input, context=results)
+        previous_output = initial_prompt or ""
+        if not isinstance(previous_output, str):
+            previous_output = json.dumps(previous_output, ensure_ascii=False)
+
+        for index, agent_id in enumerate(agents_sequence):
+            step_task = None
+            if step_tasks and index < len(step_tasks):
+                step_task = step_tasks[index]
+
+            prompt_parts = []
+            if step_task:
+                prompt_parts.append(step_task)
+
+            if previous_output:
+                context_block = previous_output if isinstance(previous_output, str) else json.dumps(previous_output, ensure_ascii=False)
+                if step_task:
+                    prompt_parts.append(f"Contexto previo:\n{context_block}")
+                else:
+                    prompt_parts.append(context_block)
+
+            prompt = "\n\n".join(part for part in prompt_parts if part).strip()
+            # fallback al flujo tradicional si no tenemos prompt explícito
+            if not prompt:
+                prompt = previous_output
+
+            response = self.call_agent(agent_id, prompt, context=results)
             results[agent_id] = {
                 "agent": agent_id,
                 "response": response,
-                "order": len(results) + 1
+                "order": len(results) + 1,
+                "prompt_sent": prompt
             }
-            # La salida de un agente es entrada del siguiente
-            current_input = response
+            previous_output = response
         
         return results

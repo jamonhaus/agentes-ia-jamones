@@ -117,4 +117,11 @@ class Config:
             print("⚠️  ADVERTENCIA: PUBLIC_URL no configurada o es inválida")
             print("   Usa una URL completa (https://...) para las Actions de ChatGPT")
 
+    def get_agent(self, agent_id: str) -> dict:
+        """Recupera la configuración de un agente o lanza ValueError si no existe"""
+        agent = self.AGENTS.get(agent_id)
+        if not agent:
+            raise ValueError(f"Agente {agent_id} no encontrado")
+        return agent
+
 config = Config()

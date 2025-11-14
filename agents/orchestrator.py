@@ -42,7 +42,7 @@ class AgentOrchestrator:
         self.execution_history.append(execution)
         return execution
     
-    def execute_pipeline(self, agents_sequence: list, initial_prompt: str) -> dict:
+    def execute_pipeline(self, agents_sequence: list, initial_prompt: str, step_tasks: list | None = None) -> dict:
         """
         Ejecuta un pipeline donde la salida de un agente es entrada del siguiente
         
@@ -59,11 +59,12 @@ class AgentOrchestrator:
             "agents": agents_sequence,
             "initial_prompt": initial_prompt,
             "status": "running",
-            "results": {}
+            "results": {},
+            "step_tasks": step_tasks or []
         }
         
         try:
-            results = self.client.call_workflow(agents_sequence, initial_prompt)
+            results = self.client.call_workflow(agents_sequence, initial_prompt, step_tasks)
             execution["results"] = results
             execution["status"] = "completed"
         except Exception as e:

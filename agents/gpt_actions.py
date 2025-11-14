@@ -3,6 +3,7 @@ ROUTER PARA GPT ACTIONS
 Este archivo contiene los endpoints que configurarás en los Actions de tus GPTs
 """
 
+import json
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -203,12 +204,22 @@ async def execute_workflow(request: WorkflowRequest):
         if not request.steps:
             raise HTTPException(status_code=400, detail="No workflow steps provided")
         
-        # Extraer agentes en orden
+        # Extraer agentes en orden y tareas por paso
         agent_sequence = [step.agent for step in request.steps]
-        initial_prompt = request.steps[0].task
+        step_tasks = [step.task for step in request.steps]
+
+        initial_context_parts = []
+        if request.workflow_name:
+            initial_context_parts.append(f"Workflow: {request.workflow_name}")
+        if request.context:
+            initial_context_parts.append(
+                f"Contexto inicial: {json.dumps(request.context, ensure_ascii=False)}"
+            )
+
+        initial_prompt = "\n\n".join(initial_context_parts).strip()
         
         # Ejecutar pipeline
-        execution = orchestrator.execute_pipeline(agent_sequence, initial_prompt)
+        execution = orchestrator.execute_pipeline(agent_sequence, initial_prompt, step_tasks)
         
         if execution["status"] == "failed":
             raise HTTPException(status_code=500, detail=execution.get("error"))
@@ -217,6 +228,7 @@ async def execute_workflow(request: WorkflowRequest):
             "workflow": request.workflow_name or "Unnamed Workflow",
             "agents_executed": agent_sequence,
             "steps_requested": [step.model_dump() for step in request.steps],
+            "initial_context": initial_prompt,
             "results": execution["results"],
             "status": "workflow_completed",
             "timestamp": execution["timestamp"]
