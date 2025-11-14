@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -108,14 +109,24 @@ class Config:
     
     @classmethod
     def validate(cls):
+        errors = []
         if not cls.OPENAI_API_KEY or cls.OPENAI_API_KEY == "sk-your-api-key-here":
             print("⚠️  ADVERTENCIA: OPENAI_API_KEY no configurada o es placeholder")
             print("   Las funciones que requieran OpenAI no funcionarán")
             print("   Para configurarla: edita .env con tu clave real")
+            errors.append("OPENAI_API_KEY no configurada")
 
         if not cls.PUBLIC_URL or not cls.PUBLIC_URL.startswith("http"):
             print("⚠️  ADVERTENCIA: PUBLIC_URL no configurada o es inválida")
             print("   Usa una URL completa (https://...) para las Actions de ChatGPT")
+            errors.append("PUBLIC_URL inválida")
+
+        log_dir_path = Path(cls.LOG_DIR)
+        if not log_dir_path.exists():
+            log_dir_path.mkdir(parents=True, exist_ok=True)
+
+        if errors:
+            raise ValueError("; ".join(errors))
 
     def get_agent(self, agent_id: str) -> dict:
         """Recupera la configuración de un agente o lanza ValueError si no existe"""
