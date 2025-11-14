@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Orquestador de Agentes IA - Jamonhaus",
-    "description": "API para coordinación y colaboración entre agentes especializados en negocio de jamones premium",
-    "version": "1.0.5"
+    "description": "API para coordinación y colaboración entre agentes especializados en negocio de jamones premium. Coordinación asíncrona para permitir colaboración completa entre agentes.",
+    "version": "1.1.0"
   },
   "servers": [
     {
@@ -13,8 +13,8 @@
   "paths": {
     "/gpt/smart/request": {
       "post": {
-        "description": "Envía una petición compleja al orquestador. El director Andrés analizará, asignará agentes especializados, coordinará su trabajo y consolidará la respuesta final. Los agentes pueden colaborar entre sí automáticamente.",
-        "operationId": "smartRequest",
+        "description": "Inicia coordinación automática asíncrona. Devuelve job_id para consultar progreso. Los agentes colaborarán entre sí.",
+        "operationId": "smartRequestAsync",
         "requestBody": {
           "required": true,
           "content": {
@@ -39,69 +39,110 @@
         },
         "responses": {
           "200": {
-            "description": "Respuesta exitosa con resultado consolidado",
+            "description": "Job iniciado exitosamente",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "peticion_original": {
+                    "job_id": {
                       "type": "string",
-                      "description": "La petición original del usuario"
+                      "description": "ID del trabajo para consultar estado"
                     },
-                    "tipo_trabajo": {
+                    "status": {
                       "type": "string",
-                      "description": "Tipo de trabajo identificado por el director"
+                      "description": "Estado inicial: queued"
                     },
-                    "equipo_participante": {
-                      "type": "array",
-                      "description": "Lista de agentes que participaron",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "agente": {
-                            "type": "string"
-                          },
-                          "tarea": {
-                            "type": "string"
-                          }
-                        }
-                      }
-                    },
-                    "conversaciones_entre_agentes": {
-                      "type": "array",
-                      "description": "Conversaciones que tuvieron los agentes entre sí para colaborar",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "from_agent": {
-                            "type": "string",
-                            "description": "Agente que inició la consulta"
-                          },
-                          "to_agent": {
-                            "type": "string",
-                            "description": "Agente consultado"
-                          },
-                          "message": {
-                            "type": "string",
-                            "description": "Pregunta realizada"
-                          },
-                          "response": {
-                            "type": "string",
-                            "description": "Respuesta recibida"
-                          },
-                          "timestamp": {
-                            "type": "number"
-                          }
-                        }
-                      }
-                    },
-                    "respuesta_final": {
-                      "type": "string",
-                      "description": "Respuesta consolidada final del director integrando todos los análisis"
-                    },
-                    "timestamp": {
+                    "message": {
                       "type": "string"
+                    },
+                    "estimated_time": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gpt/smart/status/{job_id}": {
+      "get": {
+        "description": "Consulta el estado de un trabajo de coordinación. Debes llamar a este endpoint repetidamente hasta que status sea 'completed' o 'failed'.",
+        "operationId": "checkJobStatus",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID del job devuelto por /gpt/smart/request"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado del trabajo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "job_id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": ["queued", "processing", "completed", "failed"],
+                      "description": "Estado actual del trabajo"
+                    },
+                    "result": {
+                      "type": "object",
+                      "description": "Resultado completo cuando status=completed",
+                      "properties": {
+                        "peticion_original": {
+                          "type": "string"
+                        },
+                        "tipo_trabajo": {
+                          "type": "string"
+                        },
+                        "equipo_participante": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "conversaciones_entre_agentes": {
+                          "type": "array",
+                          "description": "CLAVE: Conversaciones que tuvieron los agentes entre sí",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "from_agent": {
+                                "type": "string"
+                              },
+                              "to_agent": {
+                                "type": "string"
+                              },
+                              "message": {
+                                "type": "string"
+                              },
+                              "response": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "respuesta_final": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "error": {
+                      "type": "string",
+                      "description": "Mensaje de error si status=failed"
                     }
                   }
                 }

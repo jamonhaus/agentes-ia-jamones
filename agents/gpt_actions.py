@@ -4,7 +4,9 @@ Este archivo contiene los endpoints que configurarás en los Actions de tus GPTs
 """
 
 import json
-from fastapi import APIRouter, HTTPException
+import uuid
+import asyncio
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
@@ -13,6 +15,9 @@ from config.config import config
 
 router = APIRouter(prefix="/gpt", tags=["GPT Actions"])
 orchestrator = AgentOrchestrator()
+
+# Almacenamiento en memoria de trabajos asíncronos
+async_jobs: Dict[str, Dict[str, Any]] = {}
 
 # ============= MODELOS =============
 
@@ -49,10 +54,129 @@ class WorkflowRequest(BaseModel):
     context: Optional[Dict[str, Any]] = None
 
 
+# ============= FUNCIONES AUXILIARES PARA JOBS ASÍNCRONOS =============
+
+def process_coordination_job(job_id: str, user_request: str, context: Dict[str, Any]):
+    """Procesar coordinación en background"""
+    try:
+        async_jobs[job_id]["status"] = "processing"
+        async_jobs[job_id]["started_at"] = datetime.now().isoformat()
+        
+        # Ejecutar coordinación automática CON colaboración
+        execution = orchestrator.auto_coordinate(user_request, context)
+        
+        if execution["status"] == "failed":
+            async_jobs[job_id]["status"] = "failed"
+            async_jobs[job_id]["error"] = execution.get("error")
+        else:
+            # Preparar respuesta estructurada
+            response = {
+                "peticion_original": user_request,
+                "tipo_trabajo": execution.get("director_plan", {}).get("tipo_peticion", "análisis general"),
+                "equipo_participante": [],
+                "proceso": {
+                    "modo": execution.get("execution_mode", "paralelo"),
+                    "director": "Andrés coordinó el equipo"
+                },
+                "conversaciones_entre_agentes": execution.get("agent_conversations", []),
+                "respuesta_final": execution.get("final_response"),
+                "timestamp": execution["timestamp"]
+            }
+            
+            # Agregar info de los agentes que participaron
+            if "agent_results" in execution:
+                for agent_id, result in execution["agent_results"].items():
+                    response["equipo_participante"].append({
+                        "agente": result.get("agent"),
+                        "tarea": result.get("tarea_asignada")
+                    })
+            
+            async_jobs[job_id]["status"] = "completed"
+            async_jobs[job_id]["result"] = response
+            
+    except Exception as e:
+        async_jobs[job_id]["status"] = "failed"
+        async_jobs[job_id]["error"] = str(e)
+    
+    async_jobs[job_id]["completed_at"] = datetime.now().isoformat()
+
+
 # ============= ENDPOINTS PARA ACTIONS =============
 
 @router.post("/smart/request")
-async def smart_request(request: Dict[str, Any]):
+async def smart_request(request: Dict[str, Any], background_tasks: BackgroundTasks):
+    """
+    ENDPOINT PRINCIPAL: Coordinación automática completa (ASÍNCRONO)
+    
+    Inicia la coordinación en background y devuelve un job_id para consultar estado.
+    """
+    try:
+        user_request = request.get("request")
+        if not user_request:
+            raise HTTPException(
+                status_code=400,
+                detail="Falta el parámetro 'request' con la petición del usuario"
+            )
+        
+        context = request.get("context", {})
+        
+        # Crear job asíncrono
+        job_id = str(uuid.uuid4())
+        async_jobs[job_id] = {
+            "status": "queued",
+            "request": user_request,
+            "context": context,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        # Iniciar procesamiento en background
+        background_tasks.add_task(process_coordination_job, job_id, user_request, context)
+        
+        return {
+            "job_id": job_id,
+            "status": "queued",
+            "message": "Coordinación iniciada. Los agentes están trabajando juntos. Consulta el estado en /gpt/smart/status/{job_id}",
+            "estimated_time": "60-180 segundos"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/smart/status/{job_id}")
+async def check_job_status(job_id: str):
+    """
+    Consultar el estado de un trabajo de coordinación
+    """
+    if job_id not in async_jobs:
+        raise HTTPException(status_code=404, detail="Job no encontrado")
+    
+    job = async_jobs[job_id]
+    
+    response = {
+        "job_id": job_id,
+        "status": job["status"],
+        "created_at": job["created_at"]
+    }
+    
+    if job["status"] == "processing":
+        response["message"] = "Los agentes están colaborando..."
+        if "started_at" in job:
+            response["started_at"] = job["started_at"]
+    
+    elif job["status"] == "completed":
+        response["result"] = job.get("result")
+        response["completed_at"] = job.get("completed_at")
+        
+    elif job["status"] == "failed":
+        response["error"] = job.get("error")
+        response["completed_at"] = job.get("completed_at")
+    
+    return response
+
+
+@router.post("/smart/request/sync")
+async def smart_request_sync(request: Dict[str, Any]):
     """
     ENDPOINT PRINCIPAL: Coordinación automática completa
     
