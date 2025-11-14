@@ -3,6 +3,7 @@
 from shared.client import AIAgentClient
 from config.config import config
 import json
+import time
 from datetime import datetime
 
 class AgentOrchestrator:
@@ -138,6 +139,9 @@ class AgentOrchestrator:
             "status": "running"
         }
         
+        # Generar request_id único para tracking de conversaciones
+        request_id = f"req_{int(time.time())}_{hash(user_request) % 10000}"
+        
         try:
             # PASO 1: Director analiza y planifica
             director_analysis_prompt = f"""
@@ -230,9 +234,14 @@ INSTRUCCIONES:
                     # Validar que el agente existe
                     config.get_agent(agent_id)
                     
-                    # Ejecutar tarea
+                    # Ejecutar tarea CON COLABORACIÓN ACTIVADA
                     full_task = f"{task}\n\nContexto de petición original: {user_request}"
-                    result = self.client.call_agent(agent_id, full_task)
+                    result = self.client.call_agent(
+                        agent_id, 
+                        full_task,
+                        request_id=request_id,
+                        enable_collaboration=True  # ACTIVAR COLABORACIÓN
+                    )
                     
                     agent_results[agent_id] = {
                         "agent": config.get_agent(agent_id)["name"],
@@ -270,12 +279,17 @@ Tu respuesta será lo que se entregue al usuario final.
             execution["final_response"] = final_response
             execution["status"] = "completed"
             
+            # Recopilar conversaciones entre agentes
+            conversations = self.client.conversation_history.get(request_id, [])
+            execution["agent_conversations"] = conversations
+            
             # PASO 4: Preparar resumen ejecutivo
             execution["summary"] = {
                 "peticion": user_request,
                 "tipo": plan.get("tipo_peticion"),
                 "agentes_participantes": [ag["agent_id"] for ag in plan["agentes_requeridos"]],
                 "modo_ejecucion": execution["execution_mode"],
+                "conversaciones_realizadas": len(conversations),
                 "respuesta_final": final_response
             }
             

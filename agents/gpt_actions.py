@@ -84,6 +84,7 @@ async def smart_request(request: Dict[str, Any]):
                 "modo": execution.get("execution_mode", "paralelo"),
                 "director": "Andrés coordinó el equipo"
             },
+            "conversaciones_entre_agentes": execution.get("agent_conversations", []),
             "respuesta_final": execution.get("final_response"),
             "timestamp": execution["timestamp"]
         }

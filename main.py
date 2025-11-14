@@ -18,8 +18,8 @@ config.validate()
 # Crear app FastAPI
 app = FastAPI(
     title=config.__class__.__name__,
-    description="Orquestador de agentes de IA con OpenAI",
-    version="1.0.2"
+    description="Orquestador de agentes de IA con OpenAI - Colaboración entre agentes activada",
+    version="1.1.0"
 )
 
 
