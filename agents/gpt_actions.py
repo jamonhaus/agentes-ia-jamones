@@ -35,6 +35,19 @@ class TeamCoordinationRequest(BaseModel):
     context: Optional[Dict[str, Any]] = None
 
 
+class WorkflowStep(BaseModel):
+    """Paso individual dentro de un workflow encadenado"""
+    agent: str
+    task: str
+
+
+class WorkflowRequest(BaseModel):
+    """Solicitud para ejecutar un workflow completo"""
+    workflow_name: Optional[str] = "Unnamed Workflow"
+    steps: List[WorkflowStep]
+    context: Optional[Dict[str, Any]] = None
+
+
 # ============= ENDPOINTS PARA ACTIONS =============
 
 @router.post("/task/execute")
@@ -139,17 +152,12 @@ async def list_all_agents():
 @router.post("/team/analyze")
 async def team_analyze(request: TeamCoordinationRequest):
     """
-    ENDPOINT PARA ACTIONS: Análisis coordinado del equipo
-    
-    Multiple agents analyze the same problem from different angles
-    
-    Example:
-    {
-        "project": "Expansion Q1 2024",
-        "objective": "Analizar viabilidad de expansión a nuevos mercados",
-        "agents": ["adrian_datos", "leo_partners", "bruno_estrategia"],
-        "context": {}
-    }
+    ENDPOINT PARA ACTIONS: Análisis coordinado del equipo.
+
+    Llama a varios agentes con un mismo objetivo y combina sus hallazgos.
+
+    Ejemplo:
+    {"project": "Expansion Q1", "objective": "Validar mercados", "agents": ["adrian_datos", "bruno_estrategia"]}
     """
     try:
         results = orchestrator.execute_parallel_analysis(
@@ -182,7 +190,7 @@ async def team_analyze(request: TeamCoordinationRequest):
 
 
 @router.post("/workflow/execute")
-async def execute_workflow(request: Dict[str, Any]):
+async def execute_workflow(request: WorkflowRequest):
     """
     ENDPOINT PARA ACTIONS: Ejecutar workflow completo (pipeline)
     
@@ -199,15 +207,12 @@ async def execute_workflow(request: Dict[str, Any]):
     }
     """
     try:
-        workflow_name = request.get("workflow_name", "Unnamed Workflow")
-        steps = request.get("steps", [])
-        
-        if not steps:
+        if not request.steps:
             raise HTTPException(status_code=400, detail="No workflow steps provided")
         
         # Extraer agentes en orden
-        agent_sequence = [step["agent"] for step in steps]
-        initial_prompt = steps[0].get("task", "")
+        agent_sequence = [step.agent for step in request.steps]
+        initial_prompt = request.steps[0].task
         
         # Ejecutar pipeline
         execution = orchestrator.execute_pipeline(agent_sequence, initial_prompt)
@@ -216,8 +221,9 @@ async def execute_workflow(request: Dict[str, Any]):
             raise HTTPException(status_code=500, detail=execution.get("error"))
         
         return {
-            "workflow": workflow_name,
+            "workflow": request.workflow_name or "Unnamed Workflow",
             "agents_executed": agent_sequence,
+            "steps_requested": [step.model_dump() for step in request.steps],
             "results": execution["results"],
             "status": "workflow_completed",
             "timestamp": execution["timestamp"]
