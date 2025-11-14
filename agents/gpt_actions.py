@@ -101,13 +101,20 @@ async def director_coordinate(request: DirectorRequest):
     """
     try:
         # El Director (Andrés) recibe la petición
+        # Validar agentes solicitados (o usar todos si no se especifican)
+        try:
+            target_agents = request.required_agents or list(config.AGENTS.keys())
+            validated_agents = [config.get_agent(aid)["name"] for aid in target_agents]
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         director_prompt = f"""
         Como Andrés, Director de Ventas Online, has recibido esta solicitud: {request.request}
         
         Contexto: {request.context}
         
         Analiza qué especialistas necesitas consultar de esta lista:
-        {', '.join([config.get_agent(aid)['name'] for aid in request.required_agents or config.AGENTS.keys()])}
+        {', '.join(validated_agents)}
         
         Propón un plan de acción: qué pregunta hacer a cada especialista, en qué orden y cómo integrar sus respuestas.
         """
@@ -154,6 +161,12 @@ async def list_all_agents():
 async def team_analyze(request: TeamCoordinationRequest):
     """ENDPOINT PARA ACTIONS: Coordinación del equipo. Usa varios agentes y fusiona hallazgos. Ejemplo: {"project": "Expansion Q1", "objective": "Validar mercados", "agents": ["adrian_datos", "bruno_estrategia"]}"""
     try:
+        try:
+            for agent_id in request.agents:
+                config.get_agent(agent_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         results = orchestrator.execute_parallel_analysis(
             prompt=f"Proyecto: {request.project}\nObjetivo: {request.objective}\nContexto: {request.context}",
             agents=request.agents
@@ -205,7 +218,12 @@ async def execute_workflow(request: WorkflowRequest):
             raise HTTPException(status_code=400, detail="No workflow steps provided")
         
         # Extraer agentes en orden y tareas por paso
-        agent_sequence = [step.agent for step in request.steps]
+        try:
+            agent_sequence = [step.agent for step in request.steps]
+            for agent_id in agent_sequence:
+                config.get_agent(agent_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         step_tasks = [step.task for step in request.steps]
 
         initial_context_parts = []
