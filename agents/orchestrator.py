@@ -99,6 +99,7 @@ class AgentOrchestrator:
         
         try:
             for agent_id in agents:
+                config.get_agent(agent_id)  # valida existencia o lanza ValueError
                 result = self.client.call_agent(agent_id, prompt)
                 execution["results"][agent_id] = {
                     "agent": agent_id,

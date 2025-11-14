@@ -13,7 +13,15 @@ class AIAgentClient:
         self.client = OpenAI(api_key=api_key)
         self.model = config.OPENAI_MODEL
     
-    def call_agent(self, agent_id: str, prompt: str, context: dict = None, *, max_retries: int = 3, timeout: float = 30.0) -> str:
+    def call_agent(
+        self,
+        agent_id: str,
+        prompt: str,
+        context: dict = None,
+        *,
+        max_retries: int = 3,
+        timeout: float = 30.0,
+    ) -> str:
         """
         Llama a un agente con un prompt específico
         
@@ -38,7 +46,8 @@ class AIAgentClient:
 
         while attempt < max_retries:
             try:
-                response = self.client.chat.completions.create(
+                client = self.client.with_options(timeout=timeout)
+                response = client.chat.completions.create(
                     model=self.model,
                     messages=[
                         {"role": "system", "content": system_prompt},

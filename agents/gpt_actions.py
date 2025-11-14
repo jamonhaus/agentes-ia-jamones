@@ -107,7 +107,7 @@ async def director_coordinate(request: DirectorRequest):
         Contexto: {request.context}
         
         Analiza qué especialistas necesitas consultar de esta lista:
-        {', '.join([config.AGENTS[aid]['name'] for aid in request.required_agents or config.AGENTS.keys()])}
+        {', '.join([config.get_agent(aid)['name'] for aid in request.required_agents or config.AGENTS.keys()])}
         
         Propón un plan de acción: qué pregunta hacer a cada especialista, en qué orden y cómo integrar sus respuestas.
         """
@@ -165,10 +165,10 @@ async def team_analyze(request: TeamCoordinationRequest):
         # Compilar análisis
         team_analysis = []
         for agent_id, agent_result in results["results"].items():
-            agent_name = config.AGENTS[agent_id]["name"]
+            agent_config = config.get_agent(agent_id)
             team_analysis.append({
-                "agent": agent_name,
-                "role": config.AGENTS[agent_id].get("role"),
+                "agent": agent_config["name"],
+                "role": agent_config.get("role"),
                 "analysis": agent_result.get("response")
             })
         
