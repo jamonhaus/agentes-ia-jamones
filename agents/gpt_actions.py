@@ -51,6 +51,77 @@ class WorkflowRequest(BaseModel):
 
 # ============= ENDPOINTS PARA ACTIONS =============
 
+@router.post("/smart/request")
+async def smart_request(request: Dict[str, Any]):
+    """
+    🎯 ENDPOINT PRINCIPAL - COORDINACIÓN AUTOMÁTICA
+    
+    Este es el endpoint que debes usar por defecto en tu GPT.
+    
+    El usuario hace una petición → El orquestador automáticamente:
+    1. Analiza qué tipo de trabajo es
+    2. El Director (Andrés) decide qué agentes necesita
+    3. Reparte el trabajo entre ellos
+    4. Ejecuta en paralelo o secuencia según corresponda
+    5. Consolida todos los resultados
+    6. Entrega la respuesta final integrada
+    
+    Ejemplo:
+    {
+        "request": "Necesito un estudio de mercado para expandirnos a Madrid",
+        "context": {"presupuesto": "50k", "deadline": "Q1 2024"}
+    }
+    
+    El sistema automáticamente involucrará a los agentes necesarios:
+    - Adrián (datos de mercado)
+    - Leo (partners potenciales)
+    - Bruno (estrategia de entrada)
+    - Valeria (legal)
+    Y Andrés consolidará todo en un informe único.
+    """
+    try:
+        user_request = request.get("request")
+        if not user_request:
+            raise HTTPException(
+                status_code=400,
+                detail="Falta el parámetro 'request' con la petición del usuario"
+            )
+        
+        context = request.get("context", {})
+        
+        # Ejecutar coordinación automática
+        execution = orchestrator.auto_coordinate(user_request, context)
+        
+        if execution["status"] == "failed":
+            raise HTTPException(status_code=500, detail=execution.get("error"))
+        
+        # Preparar respuesta estructurada
+        response = {
+            "peticion_original": user_request,
+            "tipo_trabajo": execution.get("director_plan", {}).get("tipo_peticion", "análisis general"),
+            "equipo_participante": [],
+            "proceso": {
+                "modo": execution.get("execution_mode", "paralelo"),
+                "director": "Andrés coordinó el equipo"
+            },
+            "respuesta_final": execution.get("final_response"),
+            "timestamp": execution["timestamp"]
+        }
+        
+        # Agregar info de los agentes que participaron
+        if "agent_results" in execution:
+            for agent_id, result in execution["agent_results"].items():
+                response["equipo_participante"].append({
+                    "agente": result.get("agent"),
+                    "tarea": result.get("tarea_asignada")
+                })
+        
+        return response
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/task/execute")
 async def execute_agent_task(request: TaskRequest):
     """ACTION: Ejecutar tarea con agente. Ej: {"agent_id": "adrian_datos", "task": "Analiza ventas Q4", "context": {}}"""
