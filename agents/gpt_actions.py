@@ -151,14 +151,7 @@ async def list_all_agents():
 
 @router.post("/team/analyze")
 async def team_analyze(request: TeamCoordinationRequest):
-    """
-    ENDPOINT PARA ACTIONS: Análisis coordinado del equipo.
-
-    Llama a varios agentes con un mismo objetivo y combina sus hallazgos.
-
-    Ejemplo:
-    {"project": "Expansion Q1", "objective": "Validar mercados", "agents": ["adrian_datos", "bruno_estrategia"]}
-    """
+    """ENDPOINT PARA ACTIONS: Coordinación del equipo. Usa varios agentes y fusiona hallazgos. Ejemplo: {"project": "Expansion Q1", "objective": "Validar mercados", "agents": ["adrian_datos", "bruno_estrategia"]}"""
     try:
         results = orchestrator.execute_parallel_analysis(
             prompt=f"Proyecto: {request.project}\nObjetivo: {request.objective}\nContexto: {request.context}",
