@@ -187,6 +187,7 @@ async def smart_request_sync(request: SmartRequest):
                 "modo": execution.get("execution_mode", "paralelo"),
                 "director": "Andrés coordinó el equipo"
             },
+            "dialogo_agentes": execution.get("dialogo_agentes", []),
             "conversaciones_entre_agentes": execution.get("agent_conversations", []),
             "respuesta_final": execution.get("final_response"),
             "timestamp": execution["timestamp"]

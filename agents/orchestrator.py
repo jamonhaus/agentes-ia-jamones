@@ -41,6 +41,16 @@ class AgentOrchestrator:
             execution["error"] = str(e)
         
         self.execution_history.append(execution)
+
+        # Formatear historial de conversaciones para mostrarlo como diálogo visible
+        if "agent_conversations" in execution and execution["agent_conversations"]:
+            dialogo = []
+            for msg in execution["agent_conversations"]:
+                dialogo.append(f"{msg['from_agent']} → {msg['to_agent']}: {msg['message']}\nRespuesta: {msg['response']}")
+            execution["dialogo_agentes"] = dialogo
+        else:
+            execution["dialogo_agentes"] = ["No hubo interacción directa entre agentes."]
+
         return execution
     
     def execute_pipeline(self, agents_sequence: list, initial_prompt: str, step_tasks: list | None = None) -> dict:
