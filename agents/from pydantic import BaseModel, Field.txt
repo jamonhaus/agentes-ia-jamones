@@ -1,0 +1,15 @@
+from pydantic import BaseModel, Field
+
+class SmartRequest(BaseModel):
+    """Solicitud para la coordinación automática completa"""
+    request: str = Field(..., description="La petición del usuario que requiere coordinación de múltiples agentes especializados")
+    context: dict = Field(default_factory=dict, description="Contexto adicional opcional para la petición")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "request": "Estudio mercado Madrid",
+                "context": {}
+            }
+        }
+    }

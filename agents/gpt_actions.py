@@ -2,7 +2,6 @@
 ROUTER PARA GPT ACTIONS
 Este archivo contiene los endpoints que configurarás en los Actions de tus GPTs
 """
-
 import json
 import uuid
 import asyncio
@@ -52,6 +51,25 @@ class WorkflowRequest(BaseModel):
     workflow_name: Optional[str] = "Unnamed Workflow"
     steps: List[WorkflowStep]
     context: Optional[Dict[str, Any]] = None
+
+
+
+
+from pydantic import Field
+
+class SmartRequest(BaseModel):
+    """Solicitud para la coordinación automática completa"""
+    request: str = Field(..., description="La petición del usuario que requiere coordinación de múltiples agentes especializados")
+    context: dict = Field(default_factory=dict, description="Contexto adicional opcional para la petición")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "request": "Estudio mercado Madrid",
+                "context": {}
+            }
+        }
+    }
 
 
 # ============= FUNCIONES AUXILIARES PARA JOBS ASÍNCRONOS =============
@@ -104,21 +122,21 @@ def process_coordination_job(job_id: str, user_request: str, context: Dict[str, 
 # ============= ENDPOINTS PARA ACTIONS =============
 
 @router.post("/smart/request")
-async def smart_request(request: Dict[str, Any], background_tasks: BackgroundTasks):
+async def smart_request(request: SmartRequest, background_tasks: BackgroundTasks):
     """
     ENDPOINT PRINCIPAL: Coordinación automática completa (ASÍNCRONO)
     
     Inicia la coordinación en background y devuelve un job_id para consultar estado.
     """
     try:
-        user_request = request.get("request")
+        user_request = request.request
         if not user_request:
             raise HTTPException(
                 status_code=400,
                 detail="Falta el parámetro 'request' con la petición del usuario"
             )
         
-        context = request.get("context", {})
+        context = request.context or {}
         
         # Crear job asíncrono
         job_id = str(uuid.uuid4())
@@ -143,62 +161,23 @@ async def smart_request(request: Dict[str, Any], background_tasks: BackgroundTas
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/smart/status/{job_id}")
-async def check_job_status(job_id: str):
+@router.post("/smart/request/sync")
+async def smart_request_sync(request: SmartRequest):
     """
     Consultar el estado de un trabajo de coordinación
     """
-    if job_id not in async_jobs:
-        raise HTTPException(status_code=404, detail="Job no encontrado")
-    
-    job = async_jobs[job_id]
-    
-    response = {
-        "job_id": job_id,
-        "status": job["status"],
-        "created_at": job["created_at"]
-    }
-    
-    if job["status"] == "processing":
-        response["message"] = "Los agentes están colaborando..."
-        if "started_at" in job:
-            response["started_at"] = job["started_at"]
-    
-    elif job["status"] == "completed":
-        response["result"] = job.get("result")
-        response["completed_at"] = job.get("completed_at")
-        
-    elif job["status"] == "failed":
-        response["error"] = job.get("error")
-        response["completed_at"] = job.get("completed_at")
-    
-    return response
-
-
-@router.post("/smart/request/sync")
-async def smart_request_sync(request: Dict[str, Any]):
-    """
-    ENDPOINT PRINCIPAL: Coordinación automática completa
-    
-    Director analiza, decide equipo, ejecuta en paralelo y consolida resultados.
-    Ej: {"request": "Estudio mercado Madrid", "context": {}}
-    """
     try:
-        user_request = request.get("request")
+        user_request = request.request
         if not user_request:
             raise HTTPException(
                 status_code=400,
                 detail="Falta el parámetro 'request' con la petición del usuario"
             )
-        
-        context = request.get("context", {})
-        
+        context = request.context or {}
         # Ejecutar coordinación automática
         execution = orchestrator.auto_coordinate(user_request, context)
-        
         if execution["status"] == "failed":
             raise HTTPException(status_code=500, detail=execution.get("error"))
-        
         # Preparar respuesta estructurada
         response = {
             "peticion_original": user_request,
@@ -212,7 +191,6 @@ async def smart_request_sync(request: Dict[str, Any]):
             "respuesta_final": execution.get("final_response"),
             "timestamp": execution["timestamp"]
         }
-        
         # Agregar info de los agentes que participaron
         if "agent_results" in execution:
             for agent_id, result in execution["agent_results"].items():
@@ -220,9 +198,7 @@ async def smart_request_sync(request: Dict[str, Any]):
                     "agente": result.get("agent"),
                     "tarea": result.get("tarea_asignada")
                 })
-        
         return response
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

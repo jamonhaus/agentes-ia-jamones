@@ -19,7 +19,7 @@ config.validate()
 # Crear app FastAPI
 app = FastAPI(
     title=config.__class__.__name__,
-    description="Orquestador de agentes de IA con OpenAI - Colaboración entre agentes activada",
+    description="TEST CAMBIO - Orquestador de agentes de IA con OpenAI - Colaboración entre agentes activada",
     version="1.1.0"
 )
 
@@ -34,7 +34,10 @@ app.add_middleware(
 
 
 def custom_openapi():
+    print("[DEBUG] Entrando en custom_openapi()")
+    print(f"[DEBUG] config.PUBLIC_URL = {getattr(config, 'PUBLIC_URL', None)}")
     if app.openapi_schema:
+        print("[DEBUG] app.openapi_schema ya existe, devolviendo cacheada")
         return app.openapi_schema
 
     openapi_schema = get_openapi(
@@ -44,7 +47,11 @@ def custom_openapi():
         description=app.description,
     )
 
-    openapi_schema["servers"] = [{"url": config.PUBLIC_URL.rstrip("/") or "https://agentes-ia-jamones.onrender.com"}]
+    try:
+        openapi_schema["servers"] = [{"url": config.PUBLIC_URL.rstrip("/") or "https://agentes-ia-jamones.onrender.com"}]
+        print(f"[DEBUG] openapi_schema['servers'] = {openapi_schema['servers']}")
+    except Exception as e:
+        print(f"[ERROR] Al establecer openapi_schema['servers']: {e}")
 
     # For GPT Actions compatibility, inline ALL request schemas (avoid $ref)
     gpt_endpoints_schemas = {
@@ -53,9 +60,31 @@ def custom_openapi():
         "/gpt/team/analyze": "TeamCoordinationRequest",
         "/gpt/workflow/execute": "WorkflowRequest"
     }
-    
-    # /gpt/smart/request usa Dict[str, Any] - ya está inline por defecto, no necesita procesamiento
-    
+
+    # Forzar schema correcto para /gpt/smart/request y /gpt/smart/request/sync
+    smart_schema = {
+        "type": "object",
+        "required": ["request"],
+        "properties": {
+            "request": {
+                "type": "string",
+                "description": "La petición del usuario que requiere coordinación de múltiples agentes especializados"
+            },
+            "context": {
+                "type": "object",
+                "description": "Contexto adicional opcional para la petición",
+                "additionalProperties": True
+            }
+        },
+        "description": "Solicitud para la coordinación automática completa"
+    }
+    for smart_path in ["/gpt/smart/request", "/gpt/smart/request/sync"]:
+        try:
+            openapi_schema["paths"][smart_path]["post"]["requestBody"]["content"]["application/json"]["schema"] = deepcopy(smart_schema)
+            print(f"[DEBUG] Schema for {smart_path} inyectado correctamente")
+        except Exception as e:
+            print(f"[ERROR] Al inyectar schema en {smart_path}: {e}")
+
     for endpoint_path, schema_name in gpt_endpoints_schemas.items():
         try:
             component = openapi_schema["components"]["schemas"][schema_name]
@@ -67,10 +96,12 @@ def custom_openapi():
             }
             request_body_path = openapi_schema["paths"][endpoint_path]["post"]["requestBody"]["content"]["application/json"]
             request_body_path["schema"] = inline_schema
-        except KeyError:
-            pass
+            print(f"[DEBUG] Inline schema para {endpoint_path} inyectado correctamente")
+        except KeyError as e:
+            print(f"[ERROR] Al inyectar inline schema en {endpoint_path}: {e}")
 
     app.openapi_schema = openapi_schema
+    print("[DEBUG] custom_openapi() finalizado correctamente")
     return app.openapi_schema
 
 
@@ -205,6 +236,14 @@ async def health_check():
     """Verificar que la API está saludable"""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
+
+# ============= DEBUG ENDPOINTS =============
+
+@app.get("/debug/public_url", include_in_schema=False)
+async def debug_public_url():
+    """Devuelve el valor real de config.PUBLIC_URL para depuración en Render"""
+    return {"PUBLIC_URL": getattr(config, "PUBLIC_URL", None)}
+
 # ============= MAIN =============
 
 if __name__ == "__main__":
@@ -215,7 +254,8 @@ if __name__ == "__main__":
     
     uvicorn.run(
         app,
-        host=config.API_HOST,
-        port=config.API_PORT,
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", config.API_PORT)),
+        workers=2,
         reload=False
     )

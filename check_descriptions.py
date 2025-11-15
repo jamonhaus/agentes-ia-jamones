@@ -19,3 +19,17 @@ for path, methods in paths.items():
                 print(f"  DESCRIPCIÓN: {desc[:100]}...")
 
 print("\n" + "=" * 80)
+
+print("\n=== SCHEMA /gpt/smart/request ===")
+try:
+    req_schema = schema['paths']['/gpt/smart/request']['post']['requestBody']['content']['application/json']['schema']
+    print(json.dumps(req_schema, indent=2, ensure_ascii=False))
+except Exception as e:
+    print(f"Error mostrando schema /gpt/smart/request: {e}")
+
+print("\n=== SCHEMA /gpt/smart/request/sync ===")
+try:
+    req_schema_sync = schema['paths']['/gpt/smart/request/sync']['post']['requestBody']['content']['application/json']['schema']
+    print(json.dumps(req_schema_sync, indent=2, ensure_ascii=False))
+except Exception as e:
+    print(f"Error mostrando schema /gpt/smart/request/sync: {e}")

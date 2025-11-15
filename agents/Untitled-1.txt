@@ -1,0 +1,12 @@
+class SmartRequest(BaseModel):
+    """Solicitud para la coordinación automática completa"""
+    request: str  # Este campo es obligatorio
+    context: Optional[Dict[str, Any]] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "request": "Estudio mercado Madrid",
+                "context": {}
+            }
+        }
