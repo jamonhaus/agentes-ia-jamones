@@ -21,7 +21,7 @@ class AgentOrchestrator:
             agent_id: ID del agente a usar
             prompt: Descripción de la tarea
             
-        Returns:
+        def auto_coordinate(self, user_request: str, context: dict = None) -> dict:
             Dict con el resultado de la ejecución
         """
         execution = {
@@ -47,7 +47,7 @@ class AgentOrchestrator:
             dialogo = []
             for msg in execution["agent_conversations"]:
                 dialogo.append(f"{msg['from_agent']} → {msg['to_agent']}: {msg['message']}\nRespuesta: {msg['response']}")
-            execution["dialogo_agentes"] = dialogo
+            request_id = f"req_{int(time.time())}_{hash(user_request) % 10000}"
         else:
             execution["dialogo_agentes"] = ["No hubo interacción directa entre agentes."]
 
@@ -123,44 +123,26 @@ class AgentOrchestrator:
             execution["error"] = str(e)
         
         self.execution_history.append(execution)
-        return execution
-    
-    def auto_coordinate(self, user_request: str, context: dict = None) -> dict:
-        """
-        COORDINACIÓN AUTOMÁTICA - El Director analiza y ejecuta
-        
-        1. Andrés (Director) analiza la petición
-        2. Decide qué agentes necesita
-        3. Reparte el trabajo entre ellos
-        4. Ejecuta en paralelo o secuencia según corresponda
-        5. Consolida resultados y entrega respuesta final
-        
-        Args:
-            user_request: Petición del usuario
-            context: Contexto adicional
-            
-        Returns:
-            Dict con todo el proceso y resultado final
-        """
-        execution = {
-            "timestamp": datetime.now().isoformat(),
-            "type": "auto_coordination",
-            "user_request": user_request,
-            "context": context or {},
-            "status": "running"
-        }
-        
-        # Generar request_id único para tracking de conversaciones
-        request_id = f"req_{int(time.time())}_{hash(user_request) % 10000}"
-        
-        try:
-            # PASO 1: Director analiza y planifica
-            director_analysis_prompt = f"""
-Eres Andrés, Director de Ventas Online. Has recibido esta petición del usuario:
-
-"{user_request}"
-
-Contexto adicional: {json.dumps(context or {}, ensure_ascii=False)}
+                # FORZAR COLABORACIÓN REAL SIEMPRE
+                for agent_task in plan["agentes_requeridos"]:
+                    agent_id = agent_task["agent_id"]
+                    task = agent_task["tarea"]
+                    # Validar que el agente existe
+                    config.get_agent(agent_id)
+                    # Ejecutar tarea SIEMPRE con colaboración activada y request_id compartido
+                    full_task = f"{task}\n\nContexto de petición original: {user_request}"
+                    result = self.client.call_agent(
+                        agent_id,
+                        full_task,
+                        request_id=request_id,
+                        enable_collaboration=True  # SIEMPRE ACTIVAR COLABORACIÓN
+                    )
+                    agent_results[agent_id] = {
+                        "agent": config.get_agent(agent_id)["name"],
+                        "tarea_asignada": task,
+                        "respuesta": result
+                    }
+                execution["execution_mode"] = plan.get("estrategia", "paralelo")
 
 EQUIPO DISPONIBLE:
 - adrian_datos: Analista de datos y BI
@@ -190,23 +172,17 @@ INSTRUCCIONES:
 {{
   "tipo_peticion": "descripción breve",
   "agentes_requeridos": [
-    {{"agent_id": "adrian_datos", "tarea": "descripción específica de qué debe hacer"}},
-    {{"agent_id": "bruno_estrategia", "tarea": "descripción específica de qué debe hacer"}}
-  ],
-  "estrategia": "paralelo" o "secuencial"
-}}
-"""
-            
-            director_plan = self.client.call_agent("andres_director", director_analysis_prompt)
-            execution["director_plan_raw"] = director_plan
-            
-            # Parsear el plan del director
-            try:
-                # Extraer JSON del texto (puede venir con markdown o explicaciones)
-                plan_text = director_plan
-                if "```json" in plan_text:
-                    plan_text = plan_text.split("```json")[1].split("```")[0]
-                elif "```" in plan_text:
+                # Recopilar conversaciones entre agentes
+                conversations = self.client.conversation_history.get(request_id, [])
+                execution["agent_conversations"] = conversations
+
+                # Formatear historial de conversaciones para mostrarlo como diálogo visible
+                dialogo = []
+                if conversations:
+                    for i, msg in enumerate(conversations, 1):
+                        dialogo.append(f"Turno {i}: {msg['from_agent']} → {msg['to_agent']}: {msg['message']}\nRespuesta: {msg['response']}")
+                # SIEMPRE mostrar solo el diálogo real (aunque esté vacío)
+                execution["dialogo_agentes"] = dialogo
                     plan_text = plan_text.split("```")[1].split("```")[0]
                 
                 plan = json.loads(plan_text.strip())
