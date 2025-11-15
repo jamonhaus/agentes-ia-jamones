@@ -1,4 +1,5 @@
 from copy import deepcopy
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
@@ -11,6 +12,7 @@ from shared.models import (
     ParallelAnalysisRequest, WorkflowExecution
 )
 from datetime import datetime
+import os
 import uvicorn
 
 # Validar configuración
@@ -237,12 +239,7 @@ async def health_check():
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 
-# ============= DEBUG ENDPOINTS =============
 
-@app.get("/debug/public_url", include_in_schema=False)
-async def debug_public_url():
-    """Devuelve el valor real de config.PUBLIC_URL para depuración en Render"""
-    return {"PUBLIC_URL": getattr(config, "PUBLIC_URL", None)}
 
 # ============= MAIN =============
 
