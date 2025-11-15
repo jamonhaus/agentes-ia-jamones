@@ -312,3 +312,30 @@ Tu respuesta será lo que se entregue al usuario final.
         """Guarda el historial en un archivo JSON"""
         with open(f"{config.LOG_DIR}/{filename}", "w", encoding="utf-8") as f:
             json.dump(self.execution_history, f, indent=2, ensure_ascii=False)
+
+def agente_adrian(contexto):
+    # Aquí llamas a la API de OpenAI o generas la respuesta del agente
+    return f"Respuesta de Adrián a: {contexto}"
+
+def agente_francisco(contexto):
+    return f"Respuesta de Francisco a: {contexto}"
+
+agentes = {
+    "Adrián Weis": agente_adrian,  # agente_adrian es una función o clase que responde
+    "Francisco": agente_francisco,
+    # ...otros agentes
+}
+
+# Ejemplo de uso directo de agentes (sin orquestador)
+orden = ["Adrián Weis", "Francisco"]
+pregunta = "Análisis de ventas del último trimestre"
+resultado = []
+for nombre_agente in orden:
+    agente_func = agentes.get(nombre_agente)
+    if agente_func:
+        respuesta = agente_func(pregunta)
+        resultado.append((nombre_agente, respuesta))
+    else:
+        resultado.append((nombre_agente, "Agente no encontrado"))
+
+# resultado es una lista de (nombre_agente, respuesta)
