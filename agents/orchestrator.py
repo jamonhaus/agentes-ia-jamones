@@ -111,7 +111,8 @@ class AgentOrchestrator:
         try:
             for agent_id in agents:
                 config.get_agent(agent_id)  # valida existencia o lanza ValueError
-                result = self.client.call_agent(agent_id, prompt)
+                # Forzar colaboración y registro de historial
+                result = self.client.call_agent(agent_id, prompt, enable_collaboration=True, request_id=f"test_parallel_{int(time.time())}")
                 execution["results"][agent_id] = {
                     "agent": agent_id,
                     "response": result
@@ -296,7 +297,16 @@ Tu respuesta será lo que se entregue al usuario final.
             # Recopilar conversaciones entre agentes
             conversations = self.client.conversation_history.get(request_id, [])
             execution["agent_conversations"] = conversations
-            
+
+            # Formatear historial de conversaciones para mostrarlo como diálogo visible
+            if conversations:
+                dialogo = []
+                for i, msg in enumerate(conversations, 1):
+                    dialogo.append(f"Turno {i}: {msg['from_agent']} → {msg['to_agent']}: {msg['message']}\nRespuesta: {msg['response']}")
+                execution["dialogo_agentes"] = dialogo
+            else:
+                execution["dialogo_agentes"] = ["No hubo interacción directa entre agentes. (Colaboración no activada o no fue necesaria)"]
+
             # PASO 4: Preparar resumen ejecutivo
             execution["summary"] = {
                 "peticion": user_request,
